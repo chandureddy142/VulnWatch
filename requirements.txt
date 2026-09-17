@@ -9,3 +9,5 @@ SQLAlchemy
 Flask-SQLAlchemy
 requests
 beautifulsoup4
+cryptography
+urllib3
