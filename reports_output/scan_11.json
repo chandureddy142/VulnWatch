@@ -1,0 +1,37 @@
+{
+  "webguard_version": "1.0.0",
+  "scan": {
+    "id": 11,
+    "target_url": "https://testasp.vulnweb.com/",
+    "status": "FAILED",
+    "started_at": "2026-09-17T10:25:12.123523",
+    "completed_at": "2026-09-17T10:25:17.218742",
+    "severity_summary": {
+      "critical": 0,
+      "high": 1,
+      "medium": 0,
+      "low": 0,
+      "info": 0
+    },
+    "status_code": null,
+    "findings_count": 1
+  },
+  "findings": [
+    {
+      "id": 58,
+      "scan_id": 11,
+      "title": "Target Connection Failure",
+      "category": "Network Connectivity",
+      "severity": "HIGH",
+      "description": "Failed to establish connection to target URL: Connection failed or DNS lookup error: HTTPSConnectionPool(host='testasp.vulnweb.com', port=443): Max retries exceeded with url: / (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x7f832614e7b0>: Failed to establish a new connection: [Errno 101] Network is unreachable'))",
+      "remediation": "Verify target host reachability, DNS configuration, and active listening services.",
+      "affected_url": "https://testasp.vulnweb.com/",
+      "evidence": {
+        "error": "Connection failed or DNS lookup error: HTTPSConnectionPool(host='testasp.vulnweb.com', port=443): Max retries exceeded with url: / (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x7f832614e7b0>: Failed to establish a new connection: [Errno 101] Network is unreachable'))",
+        "owasp_link": "https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Security_Cheat_Sheet.html"
+      },
+      "triage_status": "active",
+      "triage_notes": null
+    }
+  ]
+}

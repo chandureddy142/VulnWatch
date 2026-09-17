@@ -1,0 +1,9 @@
+{
+  "scan_timeout": 15,
+  "default_modules": [
+    "headers",
+    "cookies"
+  ],
+  "webhook_url": "https://hooks.slack.com/services/test/test/test",
+  "api_key": "wg_e49dbd0ceee397c91411e82ab59b757af42426b0f3fa1106"
+}

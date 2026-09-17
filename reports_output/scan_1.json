@@ -1,0 +1,190 @@
+{
+  "vulnwatch_version": "1.0.0",
+  "scan": {
+    "id": 1,
+    "target_url": "http://127.0.0.1:8080/",
+    "status": "COMPLETED",
+    "started_at": "2026-09-17T12:09:37.901460",
+    "completed_at": "2026-09-17T12:09:40.496285",
+    "severity_summary": {
+      "critical": 0,
+      "high": 2,
+      "medium": 2,
+      "low": 2,
+      "info": 2
+    },
+    "status_code": 200,
+    "findings_count": 8
+  },
+  "findings": [
+    {
+      "id": 1,
+      "scan_id": 1,
+      "title": "Missing Content Security Policy (CSP)",
+      "category": "Security Headers",
+      "severity": "HIGH",
+      "description": "Content Security Policy header is not present. CSP prevents Cross-Site Scripting (XSS) and data injection attacks.",
+      "remediation": "Implement a strong Content-Security-Policy header restricting script execution and resource loading.",
+      "affected_url": "http://127.0.0.1:8080/",
+      "evidence": {
+        "header": "Content-Security-Policy",
+        "status": "Missing",
+        "owasp_link": "https://cheatsheetseries.owasp.org/index.html"
+      },
+      "triage_status": "active",
+      "triage_notes": null
+    },
+    {
+      "id": 2,
+      "scan_id": 1,
+      "title": "Missing X-Frame-Options Header",
+      "category": "Security Headers",
+      "severity": "MEDIUM",
+      "description": "The X-Frame-Options header is absent, rendering the application potentially susceptible to Clickjacking framing attacks.",
+      "remediation": "Configure 'X-Frame-Options: DENY' or 'X-Frame-Options: SAMEORIGIN' on HTTP responses.",
+      "affected_url": "http://127.0.0.1:8080/",
+      "evidence": {
+        "header": "X-Frame-Options",
+        "status": "Missing",
+        "owasp_link": "https://cheatsheetseries.owasp.org/index.html"
+      },
+      "triage_status": "active",
+      "triage_notes": null
+    },
+    {
+      "id": 3,
+      "scan_id": 1,
+      "title": "Missing or Invalid X-Content-Type-Options Header",
+      "category": "Security Headers",
+      "severity": "MEDIUM",
+      "description": "Missing 'X-Content-Type-Options: nosniff' header allows browsers to MIME-sniff response content types, potentially executing untrusted assets.",
+      "remediation": "Set 'X-Content-Type-Options: nosniff' header across all responses.",
+      "affected_url": "http://127.0.0.1:8080/",
+      "evidence": {
+        "header": "X-Content-Type-Options",
+        "value": "Missing",
+        "owasp_link": "https://cheatsheetseries.owasp.org/index.html"
+      },
+      "triage_status": "active",
+      "triage_notes": null
+    },
+    {
+      "id": 4,
+      "scan_id": 1,
+      "title": "Missing Referrer-Policy Header",
+      "category": "Security Headers",
+      "severity": "LOW",
+      "description": "No Referrer-Policy header specified. Browsers may send full referrer URLs containing sensitive path parameters.",
+      "remediation": "Set 'Referrer-Policy: strict-origin-when-cross-origin' or 'no-referrer'.",
+      "affected_url": "http://127.0.0.1:8080/",
+      "evidence": {
+        "header": "Referrer-Policy",
+        "status": "Missing",
+        "owasp_link": "https://cheatsheetseries.owasp.org/index.html"
+      },
+      "triage_status": "active",
+      "triage_notes": null
+    },
+    {
+      "id": 5,
+      "scan_id": 1,
+      "title": "Missing Permissions-Policy Header",
+      "category": "Security Headers",
+      "severity": "INFO",
+      "description": "Permissions-Policy header is missing. Controlling browser features (geolocation, camera, microphone) is recommended.",
+      "remediation": "Define a Permissions-Policy header to restrict access to hardware APIs.",
+      "affected_url": "http://127.0.0.1:8080/",
+      "evidence": {
+        "header": "Permissions-Policy",
+        "status": "Missing",
+        "owasp_link": "https://cheatsheetseries.owasp.org/index.html"
+      },
+      "triage_status": "active",
+      "triage_notes": null
+    },
+    {
+      "id": 6,
+      "scan_id": 1,
+      "title": "Server Software Version Disclosure",
+      "category": "Information Disclosure",
+      "severity": "INFO",
+      "description": "The Server header discloses precise software version numbers: 'TestServer/1.0'.",
+      "remediation": "Configure web server to suppress banner version details (e.g., ServerTokens Prod in Apache, server_tokens off in Nginx).",
+      "affected_url": "http://127.0.0.1:8080/",
+      "evidence": {
+        "header": "Server",
+        "value": "TestServer/1.0",
+        "owasp_link": "https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html"
+      },
+      "triage_status": "active",
+      "triage_notes": null
+    },
+    {
+      "id": 7,
+      "scan_id": 1,
+      "title": "Server Version Disclosed in HTTP Response Header",
+      "category": "Information Disclosure",
+      "severity": "LOW",
+      "description": "The server response includes a 'Server' header that reveals specific version information: 'TestServer/1.0'. Attackers can use this to identify vulnerable software versions and target known CVEs.",
+      "remediation": "Configure the web server to suppress or genericize the Server header. Nginx: 'server_tokens off;' | Apache: 'ServerTokens Prod; ServerSignature Off' | IIS: Remove via URL Rewrite or custom headers module.",
+      "affected_url": "http://127.0.0.1:8080/",
+      "evidence": {
+        "header": "Server",
+        "value": "TestServer/1.0",
+        "owasp_link": "https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html"
+      },
+      "triage_status": "active",
+      "triage_notes": null
+    },
+    {
+      "id": 8,
+      "scan_id": 1,
+      "title": "Target Does Not Use HTTPS / TLS Encryption",
+      "category": "TLS / Transport Security",
+      "severity": "HIGH",
+      "description": "The target is served over plain HTTP with no TLS/SSL encryption. All data transmitted between clients and the server — including credentials, session tokens, and sensitive data — is exposed to passive eavesdropping and active man-in-the-middle (MITM) attacks.",
+      "remediation": "Obtain a TLS certificate (e.g., free via Let's Encrypt) and configure the server to serve exclusively over HTTPS. Redirect all HTTP traffic to HTTPS using a 301 permanent redirect.",
+      "affected_url": "http://127.0.0.1:8080/",
+      "evidence": {
+        "scheme": "http",
+        "tls_present": false,
+        "owasp_link": "https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Security_Cheat_Sheet.html"
+      },
+      "triage_status": "active",
+      "triage_notes": null
+    }
+  ],
+  "reconnaissance": {
+    "tls_transport": {
+      "https_tls_enabled": false,
+      "http_to_https_redirect": null,
+      "redirect_hop_count": 0,
+      "final_destination": null,
+      "redirect_chain": []
+    },
+    "dns_email_security": {
+      "spf_record": null,
+      "spf_present": false,
+      "dmarc_record": null,
+      "dmarc_present": false,
+      "dmarc_enforced": false,
+      "dkim_selectors_found": []
+    },
+    "technology_stack": [
+      {
+        "source": "Server header",
+        "tech": "TestServer/1.0",
+        "label": "Unknown Server"
+      }
+    ],
+    "subdomains_discovered": {
+      "total_count": 2,
+      "subdomains": [
+        "127.0.0.1",
+        "https://127.0.0.1"
+      ],
+      "source": "Certificate Transparency Logs (crt.sh)"
+    },
+    "dangling_cnames": []
+  }
+}

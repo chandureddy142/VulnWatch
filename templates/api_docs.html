@@ -1,0 +1,557 @@
+{% extends "base.html" %}
+
+{% block title %}API Reference — VulnWatch | Passive VAPT &amp; Attack Surface Auditor{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/api_docs.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="api-docs-layout">
+
+    <!-- Sticky Sidebar Navigation -->
+    <aside class="api-sidebar">
+        <div class="api-nav-group">
+            <div class="api-nav-title">Getting Started</div>
+            <a href="#overview" class="api-nav-link is-active">Overview &amp; Auth</a>
+        </div>
+
+        <div class="api-nav-group">
+            <div class="api-nav-title">Audit Engine APIs</div>
+            <a href="#post-scans" class="api-nav-link">
+                <span class="api-nav-badge post">POST</span>
+                <span>/api/scans</span>
+            </a>
+            <a href="#get-scans" class="api-nav-link">
+                <span class="api-nav-badge get">GET</span>
+                <span>/api/scans</span>
+            </a>
+            <a href="#get-scan-detail" class="api-nav-link">
+                <span class="api-nav-badge get">GET</span>
+                <span>/api/scans/{id}</span>
+            </a>
+            <a href="#post-batch" class="api-nav-link">
+                <span class="api-nav-badge post">POST</span>
+                <span>/api/scans/batch</span>
+            </a>
+            <a href="#delete-scan" class="api-nav-link">
+                <span class="api-nav-badge delete">DELETE</span>
+                <span>/api/scan/{id}</span>
+            </a>
+        </div>
+
+        <div class="api-nav-group">
+            <div class="api-nav-title">Report Exports</div>
+            <a href="#export-endpoints" class="api-nav-link">
+                <span class="api-nav-badge get">GET</span>
+                <span>/export/{format}/{id}</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="api-content">
+
+        <!-- Hero / Overview Section -->
+        <section id="overview" class="api-section">
+            <div class="api-header-hero">
+                <h1>
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="16 18 22 12 16 6"></polyline>
+                        <polyline points="8 6 2 12 8 18"></polyline>
+                    </svg>
+                    VulnWatch REST API Reference
+                </h1>
+                <p>
+                    Programmatically trigger passive security posture assessments, list historical scan metrics, retrieve attack surface reconnaissance intelligence, and download compliance export deliverables (PDF, JSON, HTML).
+                </p>
+
+                <div class="api-meta-grid">
+                    <div class="api-meta-card">
+                        <label>Base URL</label>
+                        <code>http://127.0.0.1:5000/api</code>
+                    </div>
+                    <div class="api-meta-card">
+                        <label>Content Type</label>
+                        <code>application/json</code>
+                    </div>
+                    <div class="api-meta-card">
+                        <label>Rate Limit</label>
+                        <code>5 requests / minute</code>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Endpoint 1: POST /api/scans -->
+        <section id="post-scans" class="api-section">
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <div class="endpoint-title-group">
+                        <span class="method-badge post">POST</span>
+                        <span class="endpoint-path">/api/scans</span>
+                    </div>
+                    <span class="endpoint-desc">Trigger a single target audit</span>
+                </div>
+
+                <div class="endpoint-body">
+                    <div class="endpoint-details">
+                        <h4>Request Parameters</h4>
+                        <table class="param-table">
+                            <thead>
+                                <tr>
+                                    <th>Field</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="param-name">target_url</span></td>
+                                    <td><span class="param-type">string</span></td>
+                                    <td><span class="param-req">Required</span></td>
+                                    <td>Target hostname or URL to audit (e.g. <code>https://example.com</code>).</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="param-name">authorized</span></td>
+                                    <td><span class="param-type">boolean</span></td>
+                                    <td><span class="param-req">Required</span></td>
+                                    <td>Explicit confirmation that you are authorized to audit this target (<code>true</code>).</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="endpoint-desc">
+                            Initiates passive security header compliance, cookie flag auditing, HTTP method checks, and Certificate Transparency recon.
+                        </p>
+                    </div>
+
+                    <div class="endpoint-code">
+                        <div class="code-box">
+                            <div class="code-box-header">
+                                <span>cURL Example</span>
+                                <button class="copy-btn" data-copy-target="curl-post-scan">Copy</button>
+                            </div>
+                            <pre><code id="curl-post-scan">curl -X POST http://127.0.0.1:5000/api/scans \
+  -H "Content-Type: application/json" \
+  -d '{
+    "target_url": "https://example.com",
+    "authorized": true
+  }'</code></pre>
+                        </div>
+
+                        <div class="code-box" style="margin-top: 1rem;">
+                            <div class="code-box-header">
+                                <span>Response (201 Created)</span>
+                                <button class="copy-btn" data-copy-target="resp-post-scan">Copy</button>
+                            </div>
+                            <pre><code id="resp-post-scan">{
+  "id": 14,
+  "target_url": "https://example.com",
+  "status": "COMPLETED",
+  "posture_score": 85,
+  "critical_count": 0,
+  "high_count": 1,
+  "medium_count": 2,
+  "low_count": 1,
+  "started_at": "2026-09-17 17:00:00"
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Endpoint 2: GET /api/scans -->
+        <section id="get-scans" class="api-section">
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <div class="endpoint-title-group">
+                        <span class="method-badge get">GET</span>
+                        <span class="endpoint-path">/api/scans</span>
+                    </div>
+                    <span class="endpoint-desc">List historical audits &amp; metrics</span>
+                </div>
+
+                <div class="endpoint-body">
+                    <div class="endpoint-details">
+                        <h4>Query Parameters</h4>
+                        <table class="param-table">
+                            <thead>
+                                <tr>
+                                    <th>Parameter</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="param-name">limit</span></td>
+                                    <td><span class="param-type">integer</span></td>
+                                    <td><span class="param-opt">Optional</span></td>
+                                    <td>Maximum scan records to return (default: all).</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="param-name">offset</span></td>
+                                    <td><span class="param-type">integer</span></td>
+                                    <td><span class="param-opt">Optional</span></td>
+                                    <td>Pagination offset index.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="param-name">status</span></td>
+                                    <td><span class="param-type">string</span></td>
+                                    <td><span class="param-opt">Optional</span></td>
+                                    <td>Filter by scan state: <code>COMPLETED</code>, <code>RUNNING</code>, <code>FAILED</code>.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="endpoint-code">
+                        <div class="code-box">
+                            <div class="code-box-header">
+                                <span>cURL Example</span>
+                                <button class="copy-btn" data-copy-target="curl-get-scans">Copy</button>
+                            </div>
+                            <pre><code id="curl-get-scans">curl -X GET "http://127.0.0.1:5000/api/scans?limit=10&status=COMPLETED"</code></pre>
+                        </div>
+
+                        <div class="code-box" style="margin-top: 1rem;">
+                            <div class="code-box-header">
+                                <span>Response (200 OK)</span>
+                                <button class="copy-btn" data-copy-target="resp-get-scans">Copy</button>
+                            </div>
+                            <pre><code id="resp-get-scans">[
+  {
+    "id": 14,
+    "target_url": "https://example.com",
+    "status": "COMPLETED",
+    "posture_score": 85,
+    "high_count": 1,
+    "medium_count": 2,
+    "started_at": "2026-09-17 17:00:00"
+  }
+]</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Endpoint 3: GET /api/scans/{id} -->
+        <section id="get-scan-detail" class="api-section">
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <div class="endpoint-title-group">
+                        <span class="method-badge get">GET</span>
+                        <span class="endpoint-path">/api/scans/{id}</span>
+                    </div>
+                    <span class="endpoint-desc">Fetch findings &amp; passive recon intelligence</span>
+                </div>
+
+                <div class="endpoint-body">
+                    <div class="endpoint-details">
+                        <h4>Path Parameters</h4>
+                        <table class="param-table">
+                            <thead>
+                                <tr>
+                                    <th>Parameter</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="param-name">id</span></td>
+                                    <td><span class="param-type">integer</span></td>
+                                    <td><span class="param-req">Required</span></td>
+                                    <td>Unique database identifier of target scan.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="endpoint-desc">
+                            Returns full audit details including findings, CVSS v3.1 vectors, remediation guidance, tech stack fingerprints, SPF/DMARC posture, and CT subdomains.
+                        </p>
+                    </div>
+
+                    <div class="endpoint-code">
+                        <div class="code-box">
+                            <div class="code-box-header">
+                                <span>cURL Example</span>
+                                <button class="copy-btn" data-copy-target="curl-get-scan-id">Copy</button>
+                            </div>
+                            <pre><code id="curl-get-scan-id">curl -X GET http://127.0.0.1:5000/api/scans/14</code></pre>
+                        </div>
+
+                        <div class="code-box" style="margin-top: 1rem;">
+                            <div class="code-box-header">
+                                <span>Response (200 OK)</span>
+                                <button class="copy-btn" data-copy-target="resp-get-scan-id">Copy</button>
+                            </div>
+                            <pre><code id="resp-get-scan-id">{
+  "id": 14,
+  "target_url": "https://example.com",
+  "status": "COMPLETED",
+  "posture_score": 85,
+  "findings": [
+    {
+      "id": 102,
+      "title": "Missing Content-Security-Policy",
+      "severity": "HIGH",
+      "cvss_score": 7.5,
+      "cwe_id": "CWE-693"
+    }
+  ],
+  "reconnaissance": {
+    "subdomains_discovered": ["api.example.com", "dev.example.com"],
+    "dns_email_security": {"spf_detected": true, "dmarc_detected": false}
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Endpoint 4: POST /api/scans/batch -->
+        <section id="post-batch" class="api-section">
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <div class="endpoint-title-group">
+                        <span class="method-badge post">POST</span>
+                        <span class="endpoint-path">/api/scans/batch</span>
+                    </div>
+                    <span class="endpoint-desc">Trigger multi-target batch audit</span>
+                </div>
+
+                <div class="endpoint-body">
+                    <div class="endpoint-details">
+                        <h4>Request Body Schema</h4>
+                        <table class="param-table">
+                            <thead>
+                                <tr>
+                                    <th>Field</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="param-name">targets</span></td>
+                                    <td><span class="param-type">array[string]</span></td>
+                                    <td><span class="param-req">Required</span></td>
+                                    <td>List of target URLs to audit sequentially.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="param-name">authorized</span></td>
+                                    <td><span class="param-type">boolean</span></td>
+                                    <td><span class="param-req">Required</span></td>
+                                    <td>Explicit confirmation of authorization (<code>true</code>).</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="endpoint-code">
+                        <div class="code-box">
+                            <div class="code-box-header">
+                                <span>cURL Example</span>
+                                <button class="copy-btn" data-copy-target="curl-post-batch">Copy</button>
+                            </div>
+                            <pre><code id="curl-post-batch">curl -X POST http://127.0.0.1:5000/api/scans/batch \
+  -H "Content-Type: application/json" \
+  -d '{
+    "targets": ["https://site1.com", "https://site2.com"],
+    "authorized": true
+  }'</code></pre>
+                        </div>
+
+                        <div class="code-box" style="margin-top: 1rem;">
+                            <div class="code-box-header">
+                                <span>Response (200 OK)</span>
+                                <button class="copy-btn" data-copy-target="resp-post-batch">Copy</button>
+                            </div>
+                            <pre><code id="resp-post-batch">{
+  "batch_count": 2,
+  "redirect_url": "/scanner/batch/results?ids=14,15",
+  "scans": [
+    {"id": 14, "target_url": "https://site1.com"},
+    {"id": 15, "target_url": "https://site2.com"}
+  ]
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Endpoint 5: Export Deliverables -->
+        <section id="export-endpoints" class="api-section">
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <div class="endpoint-title-group">
+                        <span class="method-badge get">GET</span>
+                        <span class="endpoint-path">/export/{format}/{scan_id}</span>
+                    </div>
+                    <span class="endpoint-desc">Download compliance report deliverables</span>
+                </div>
+
+                <div class="endpoint-body">
+                    <div class="endpoint-details">
+                        <h4>Available Export Formats</h4>
+                        <table class="param-table">
+                            <thead>
+                                <tr>
+                                    <th>Format Route</th>
+                                    <th>MIME Type</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="param-name">/export/pdf/{id}</span></td>
+                                    <td><code>application/pdf</code></td>
+                                    <td>Executive multi-page PDF compliance document.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="param-name">/export/json/{id}</span></td>
+                                    <td><code>application/json</code></td>
+                                    <td>Full machine-readable JSON object with findings &amp; recon.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="param-name">/export/html/{id}</span></td>
+                                    <td><code>text/html</code></td>
+                                    <td>Standalone self-contained HTML audit report.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="endpoint-code">
+                        <div class="code-box">
+                            <div class="code-box-header">
+                                <span>cURL Download Example</span>
+                                <button class="copy-btn" data-copy-target="curl-export">Copy</button>
+                            </div>
+                            <pre><code id="curl-export"># Download Executive PDF Report
+curl -O http://127.0.0.1:5000/export/pdf/14
+
+# Download Machine-Readable JSON Export
+curl -O http://127.0.0.1:5000/export/json/14</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Endpoint 6: DELETE /api/scan/{id} -->
+        <section id="delete-scan" class="api-section">
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <div class="endpoint-title-group">
+                        <span class="method-badge delete">DELETE</span>
+                        <span class="endpoint-path">/api/scan/{id}</span>
+                    </div>
+                    <span class="endpoint-desc">Delete scan record</span>
+                </div>
+
+                <div class="endpoint-body">
+                    <div class="endpoint-details">
+                        <h4>Path Parameters</h4>
+                        <table class="param-table">
+                            <thead>
+                                <tr>
+                                    <th>Parameter</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="param-name">id</span></td>
+                                    <td><span class="param-type">integer</span></td>
+                                    <td><span class="param-req">Required</span></td>
+                                    <td>ID of audit record to delete.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="endpoint-code">
+                        <div class="code-box">
+                            <div class="code-box-header">
+                                <span>cURL Example</span>
+                                <button class="copy-btn" data-copy-target="curl-delete-scan">Copy</button>
+                            </div>
+                            <pre><code id="curl-delete-scan">curl -X DELETE http://127.0.0.1:5000/api/scan/14</code></pre>
+                        </div>
+
+                        <div class="code-box" style="margin-top: 1rem;">
+                            <div class="code-box-header">
+                                <span>Response (200 OK)</span>
+                                <button class="copy-btn" data-copy-target="resp-delete-scan">Copy</button>
+                            </div>
+                            <pre><code id="resp-delete-scan">{
+  "message": "Scan #14 deleted successfully."
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- Copy to Clipboard & Active Nav Scroll Script -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Copy-to-clipboard buttons
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetId = btn.getAttribute('data-copy-target');
+            const codeEl = document.getElementById(targetId);
+            if (!codeEl) return;
+
+            const textToCopy = codeEl.innerText.trim();
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✓ Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Clipboard copy failed:', err);
+            });
+        });
+    });
+
+    // Sidebar active link indicator on scroll
+    const sections = document.querySelectorAll('section.api-section');
+    const navLinks = document.querySelectorAll('.api-nav-link');
+
+    window.addEventListener('scroll', () => {
+        let current = '';
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop - 110;
+            if (window.scrollY >= sectionTop) {
+                current = section.getAttribute('id');
+            }
+        });
+
+        navLinks.forEach(link => {
+            link.classList.remove('is-active');
+            if (link.getAttribute('href') === `#${current}`) {
+                link.classList.add('is-active');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

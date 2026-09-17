@@ -1,0 +1,440 @@
+{% extends "base.html" %}
+
+{% block title %}Audit Findings — VulnWatch | Passive VAPT &amp; Attack Surface Auditor{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/results.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="results-header panel">
+    <div class="panel-body">
+        <div class="header-card-main">
+            <div>
+                <span class="eyebrow">// SECURITY ASSESSMENT RESULTS</span>
+                <h1 class="mono target-title">{{ scan.target_url }}</h1>
+                <div class="header-meta text-dim">
+                    <span>Scan ID: <code class="mono">#{{ scan.id }}</code></span>
+                    <span class="meta-sep">&bull;</span>
+                    <span>Status Code: <strong class="text-1">{{ scan.status_code or 'N/A' }}</strong></span>
+                    <span class="meta-sep">&bull;</span>
+                    <span>Executed: <span class="mono">{{ scan.started_at }}</span></span>
+                    {% if diff_data is defined and diff_data.has_previous %}
+                    <span class="meta-sep">&bull;</span>
+                    <span class="text-1">Compared to scan #{{ diff_data.previous_scan_id }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="header-actions">
+                <a href="/reports/{{ scan.id }}/pdf" class="btn btn-primary">Export PDF</a>
+                <a href="/reports/{{ scan.id }}/json" class="btn">Export JSON</a>
+                <a href="/reports/{{ scan.id }}/html" class="btn">Export HTML</a>
+            </div>
+        </div>
+
+        <div class="severity-bar">
+            <div class="sev-pill" data-sev="critical">Critical <strong>{{ scan.critical_count }}</strong></div>
+            <div class="sev-pill" data-sev="high">High <strong>{{ scan.high_count }}</strong></div>
+            <div class="sev-pill" data-sev="medium">Medium <strong>{{ scan.medium_count }}</strong></div>
+            <div class="sev-pill" data-sev="low">Low <strong>{{ scan.low_count }}</strong></div>
+            <div class="sev-pill" data-sev="info">Info <strong>{{ scan.info_count }}</strong></div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     PASSIVE RECON INTELLIGENCE PANEL (appears only when recon data exists)
+     ═══════════════════════════════════════════════════════════════════════ -->
+{% set recon = (scan.response_headers['_recon'] if scan.response_headers and '_recon' in scan.response_headers else None) %}
+{% if recon %}
+<div class="panel recon-panel" id="recon-panel">
+    <div class="recon-panel-header">
+        <span class="recon-panel-title">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
+            Passive Reconnaissance &amp; Attack Surface Intelligence
+        </span>
+        <span class="recon-panel-meta">
+            {% if recon.ct_subdomain_count %}<span class="recon-badge">{{ recon.ct_subdomain_count }} subdomains</span>{% endif %}
+            {% if recon.detected_tech %}<span class="recon-badge">{{ recon.detected_tech|length }} tech signals</span>{% endif %}
+            {% if recon.dangling_cnames %}<span class="recon-badge danger">{{ recon.dangling_cnames|length }} dangling CNAME(s)</span>{% endif %}
+        </span>
+    </div>
+    <div class="recon-panel-body" id="recon-body">
+        <div class="recon-grid">
+
+            <!-- TLS & Redirect Chain -->
+            <div class="recon-section">
+                <div class="recon-section-title">TLS &amp; Redirect Chain</div>
+                <div class="recon-kv-list">
+                    <div class="recon-kv">
+                        <span class="recon-key">HTTPS / TLS</span>
+                        <span class="recon-val {% if recon.tls_info.get('uses_tls') %}recon-ok{% else %}recon-warn{% endif %}">
+                            {% if recon.tls_info.get('uses_tls') %}✓ Enabled{% else %}✗ Not Used{% endif %}
+                        </span>
+                    </div>
+                    <div class="recon-kv">
+                        <span class="recon-key">HTTP → HTTPS Redirect</span>
+                        <span class="recon-val {% if recon.tls_info.get('http_to_https_redirect') %}recon-ok{% else %}recon-warn{% endif %}">
+                            {% if recon.tls_info.get('http_to_https_redirect') %}✓ Active{% else %}✗ Not Configured{% endif %}
+                        </span>
+                    </div>
+                    {% if recon.redirect_chain %}
+                    <div class="recon-kv">
+                        <span class="recon-key">Redirect Hops</span>
+                        <span class="recon-val">{{ recon.redirect_chain|length - 1 }}</span>
+                    </div>
+                    {% for hop in recon.redirect_chain %}
+                    <div class="recon-redirect-hop">
+                        <span class="recon-hop-code">{{ hop.status_code }}</span>
+                        <code class="mono recon-hop-url">{{ hop.url }}</code>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- DNS Security Posture -->
+            <div class="recon-section">
+                <div class="recon-section-title">DNS Email Security Posture</div>
+                <div class="recon-kv-list">
+                    <div class="recon-kv">
+                        <span class="recon-key">SPF Record</span>
+                        <span class="recon-val {% if recon.spf_record %}recon-ok{% else %}recon-warn{% endif %}">
+                            {% if recon.spf_record %}✓ Present{% else %}✗ Missing{% endif %}
+                        </span>
+                    </div>
+                    {% if recon.spf_record %}
+                    <div class="recon-kv recon-kv--sub">
+                        <code class="mono recon-dns-val">{{ recon.spf_record[:80] }}{% if recon.spf_record|length > 80 %}…{% endif %}</code>
+                    </div>
+                    {% endif %}
+                    <div class="recon-kv">
+                        <span class="recon-key">DMARC Record</span>
+                        <span class="recon-val {% if recon.dmarc_record %}{% if 'p=none' in recon.dmarc_record %}recon-warn{% else %}recon-ok{% endif %}{% else %}recon-warn{% endif %}">
+                            {% if recon.dmarc_record %}{% if 'p=none' in recon.dmarc_record %}⚠ p=none (Not Enforced){% else %}✓ Enforced{% endif %}{% else %}✗ Missing{% endif %}
+                        </span>
+                    </div>
+                    <div class="recon-kv">
+                        <span class="recon-key">DKIM Selectors Found</span>
+                        <span class="recon-val {% if recon.dkim_selectors_found %}recon-ok{% else %}recon-neutral{% endif %}">
+                            {% if recon.dkim_selectors_found %}{{ recon.dkim_selectors_found | join(', ') }}{% else %}None detected{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tech Stack Fingerprints -->
+            {% if recon.detected_tech %}
+            <div class="recon-section">
+                <div class="recon-section-title">Technology Stack Fingerprints</div>
+                <div class="recon-kv-list">
+                    {% for tech in recon.detected_tech %}
+                    <div class="recon-kv">
+                        <span class="recon-key">{{ tech.label }}</span>
+                        <span class="recon-val recon-neutral"><code class="mono">{{ tech.tech[:60] }}{% if tech.tech|length > 60 %}…{% endif %}</code></span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- CT Subdomains -->
+            {% if recon.ct_subdomain_count %}
+            <div class="recon-section recon-section--full">
+                <div class="recon-section-title">Certificate Transparency Subdomains ({{ recon.ct_subdomain_count }} total)</div>
+                <div class="recon-subdomain-list">
+                    {% for sub in recon.ct_subdomains[:20] %}
+                    <code class="recon-subdomain-chip mono">{{ sub }}</code>
+                    {% endfor %}
+                    {% if recon.ct_subdomain_count > 20 %}
+                    <span class="recon-more">+{{ recon.ct_subdomain_count - 20 }} more via <a href="https://crt.sh/?q=%25.{{ recon.ct_subdomains[0].split('.')[-2:] | join('.') }}" target="_blank" rel="noopener noreferrer">crt.sh</a></span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Dangling CNAMEs -->
+            {% if recon.dangling_cnames %}
+            <div class="recon-section recon-section--full">
+                <div class="recon-section-title recon-section-title--danger">⚠ Potential Dangling CNAME Records ({{ recon.dangling_cnames|length }})</div>
+                {% for entry in recon.dangling_cnames %}
+                <div class="recon-cname-entry">
+                    <code class="mono">{{ entry.subdomain }}</code>
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    <code class="mono recon-cname-target">{{ entry.cname_target }}</code>
+                    <span class="recon-cname-status {% if 'Does Not' in entry.status %}recon-cname-status--high{% else %}recon-cname-status--med{% endif %}">{{ entry.status }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Filter &amp; Search Controls -->
+
+<div class="filter-toolbar">
+    <div class="filter-buttons" id="severity-filters">
+        <button type="button" class="filter-btn is-active" data-severity="ALL">All <span class="count-badge">{{ scan.findings|length }}</span></button>
+        <button type="button" class="filter-btn" data-sev="critical" data-severity="CRITICAL">Critical <span class="count-badge">{{ scan.critical_count }}</span></button>
+        <button type="button" class="filter-btn" data-sev="high" data-severity="HIGH">High <span class="count-badge">{{ scan.high_count }}</span></button>
+        <button type="button" class="filter-btn" data-sev="medium" data-severity="MEDIUM">Medium <span class="count-badge">{{ scan.medium_count }}</span></button>
+        <button type="button" class="filter-btn" data-sev="low" data-severity="LOW">Low <span class="count-badge">{{ scan.low_count }}</span></button>
+        <button type="button" class="filter-btn" data-sev="info" data-severity="INFO">Info <span class="count-badge">{{ scan.info_count }}</span></button>
+
+        {% if diff_data is defined and diff_data.has_previous %}
+        <span class="meta-sep" style="align-self: center; margin: 0 4px;">|</span>
+        <button type="button" class="filter-btn" data-diff="NEW">New</button>
+        <button type="button" class="filter-btn" data-diff="PERSISTENT">Persistent</button>
+        {% endif %}
+    </div>
+    <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="finding-search" placeholder="Filter findings by keyword&hellip;">
+    </div>
+</div>
+
+<!-- Findings Cards Container -->
+<div class="findings-list" id="findings-container">
+    {% for finding in scan.findings %}
+    {% set diff_status = (diff_data.finding_diff.get(finding.id, 'NEW') if (diff_data is defined and diff_data.has_previous) else '') %}
+    <article class="finding-item panel" data-severity="{{ finding.severity.value }}" data-diff="{{ diff_status }}" data-triage="{{ finding.triage_status.value if finding.triage_status else 'active' }}">
+        <button type="button" class="finding-header" aria-expanded="false">
+            <span class="finding-title-group">
+                <span class="badge-sev {{ finding.severity.value.lower() }}">{{ finding.severity.value }}</span>
+                {% if diff_status == 'NEW' %}
+                <span class="badge-diff new">NEW</span>
+                {% elif diff_status == 'PERSISTENT' %}
+                <span class="badge-diff persistent">PERSISTENT</span>
+                {% endif %}
+                <span class="finding-title">{{ finding.title }}</span>
+            </span>
+            <span class="finding-header-right">
+                <span class="finding-category">{{ finding.category }}</span>
+                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </span>
+        </button>
+
+        <div class="finding-body">
+            <div class="field-group">
+                <div class="field-label">Affected Target Endpoint</div>
+                <code class="endpoint-code mono">{{ finding.affected_url }}</code>
+            </div>
+
+            <div class="field-group">
+                <div class="field-label">Description</div>
+                <p class="field-text">{{ finding.description }}</p>
+            </div>
+
+            {% if finding.evidence %}
+            <div class="field-group">
+                <div class="field-label evidence-label-row">
+                    <span>Captured Evidence Payload</span>
+                    <button type="button" class="copy-btn" data-copy-target="evidence-{{ finding.id }}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        <span>Copy</span>
+                    </button>
+                </div>
+                <pre class="evidence-block mono" id="evidence-{{ finding.id }}"><code>{{ finding.evidence | tojson(indent=2) }}</code></pre>
+            </div>
+            {% endif %}
+
+            <div class="field-group remediation-box">
+                <div class="field-label field-label--ok" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Recommended Remediation</span>
+                    {% set owasp_url = (finding.evidence.get('owasp_link') if finding.evidence and finding.evidence.get('owasp_link') else 'https://cheatsheetseries.owasp.org/') %}
+                    <a href="{{ owasp_url }}" target="_blank" rel="noopener noreferrer" class="owasp-link">
+                        <span>OWASP Reference</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    </a>
+                </div>
+                <p class="field-text">{{ finding.remediation }}</p>
+
+                {% if finding_snippets is defined and finding.id in finding_snippets %}
+                {% set snippets = finding_snippets[finding.id] %}
+                <div class="snippets-container" style="margin-top: 14px;">
+                    <div class="field-label" style="font-weight: 600; margin-bottom: 8px;">Interactive Remediation Code Snippets</div>
+                    <div class="snippet-tabs" role="tablist">
+                        <button type="button" class="snippet-tab active" data-target="snippet-nginx-{{ finding.id }}">Nginx</button>
+                        <button type="button" class="snippet-tab" data-target="snippet-apache-{{ finding.id }}">Apache</button>
+                        <button type="button" class="snippet-tab" data-target="snippet-python-{{ finding.id }}">Python / Flask</button>
+                    </div>
+                    <div class="snippet-content">
+                        <div class="snippet-pane active" id="snippet-nginx-{{ finding.id }}">
+                            <div class="snippet-header">
+                                <span>Nginx Config</span>
+                                <button type="button" class="copy-btn" data-copy-target="code-nginx-{{ finding.id }}">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                    <span>Copy Snippet</span>
+                                </button>
+                            </div>
+                            <pre class="snippet-code mono" id="code-nginx-{{ finding.id }}"><code>{{ snippets.nginx }}</code></pre>
+                        </div>
+                        <div class="snippet-pane hidden" id="snippet-apache-{{ finding.id }}">
+                            <div class="snippet-header">
+                                <span>Apache Config</span>
+                                <button type="button" class="copy-btn" data-copy-target="code-apache-{{ finding.id }}">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                    <span>Copy Snippet</span>
+                                </button>
+                            </div>
+                            <pre class="snippet-code mono" id="code-apache-{{ finding.id }}"><code>{{ snippets.apache }}</code></pre>
+                        </div>
+                        <div class="snippet-pane hidden" id="snippet-python-{{ finding.id }}">
+                            <div class="snippet-header">
+                                <span>Python / Flask Middleware</span>
+                                <button type="button" class="copy-btn" data-copy-target="code-python-{{ finding.id }}">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                    <span>Copy Snippet</span>
+                                </button>
+                            </div>
+                            <pre class="snippet-code mono" id="code-python-{{ finding.id }}"><code>{{ snippets.python_flask }}</code></pre>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- CVSS v3.1 Scoring Calculator -->
+            <div class="cvss-panel">
+                <div class="cvss-panel-header">
+                    <span>CVSS v3.1 Scoring Calculator</span>
+                    <span class="cvss-score-display" id="cvss-display-{{ finding.id }}">Score: —</span>
+                </div>
+                <div class="cvss-grid" id="cvss-grid-{{ finding.id }}">
+                    <!-- Attack Vector -->
+                    <div class="cvss-metric-group">
+                        <label class="cvss-metric-label">Attack Vector (AV)</label>
+                        <div class="cvss-btn-group" data-metric="AV" data-finding="{{ finding.id }}">
+                            <button type="button" class="cvss-btn" data-value="N" title="Network">N</button>
+                            <button type="button" class="cvss-btn" data-value="A" title="Adjacent">A</button>
+                            <button type="button" class="cvss-btn" data-value="L" title="Local">L</button>
+                            <button type="button" class="cvss-btn" data-value="P" title="Physical">P</button>
+                        </div>
+                    </div>
+                    <!-- Attack Complexity -->
+                    <div class="cvss-metric-group">
+                        <label class="cvss-metric-label">Attack Complexity (AC)</label>
+                        <div class="cvss-btn-group" data-metric="AC" data-finding="{{ finding.id }}">
+                            <button type="button" class="cvss-btn" data-value="L" title="Low">L</button>
+                            <button type="button" class="cvss-btn" data-value="H" title="High">H</button>
+                        </div>
+                    </div>
+                    <!-- Privileges Required -->
+                    <div class="cvss-metric-group">
+                        <label class="cvss-metric-label">Privileges Required (PR)</label>
+                        <div class="cvss-btn-group" data-metric="PR" data-finding="{{ finding.id }}">
+                            <button type="button" class="cvss-btn" data-value="N" title="None">N</button>
+                            <button type="button" class="cvss-btn" data-value="L" title="Low">L</button>
+                            <button type="button" class="cvss-btn" data-value="H" title="High">H</button>
+                        </div>
+                    </div>
+                    <!-- User Interaction -->
+                    <div class="cvss-metric-group">
+                        <label class="cvss-metric-label">User Interaction (UI)</label>
+                        <div class="cvss-btn-group" data-metric="UI" data-finding="{{ finding.id }}">
+                            <button type="button" class="cvss-btn" data-value="N" title="None">N</button>
+                            <button type="button" class="cvss-btn" data-value="R" title="Required">R</button>
+                        </div>
+                    </div>
+                    <!-- Scope -->
+                    <div class="cvss-metric-group">
+                        <label class="cvss-metric-label">Scope (S)</label>
+                        <div class="cvss-btn-group" data-metric="S" data-finding="{{ finding.id }}">
+                            <button type="button" class="cvss-btn" data-value="U" title="Unchanged">U</button>
+                            <button type="button" class="cvss-btn" data-value="C" title="Changed">C</button>
+                        </div>
+                    </div>
+                    <!-- Confidentiality Impact -->
+                    <div class="cvss-metric-group">
+                        <label class="cvss-metric-label">Confidentiality (C)</label>
+                        <div class="cvss-btn-group" data-metric="C" data-finding="{{ finding.id }}">
+                            <button type="button" class="cvss-btn" data-value="N" title="None">N</button>
+                            <button type="button" class="cvss-btn" data-value="L" title="Low">L</button>
+                            <button type="button" class="cvss-btn" data-value="H" title="High">H</button>
+                        </div>
+                    </div>
+                    <!-- Integrity Impact -->
+                    <div class="cvss-metric-group">
+                        <label class="cvss-metric-label">Integrity (I)</label>
+                        <div class="cvss-btn-group" data-metric="I" data-finding="{{ finding.id }}">
+                            <button type="button" class="cvss-btn" data-value="N" title="None">N</button>
+                            <button type="button" class="cvss-btn" data-value="L" title="Low">L</button>
+                            <button type="button" class="cvss-btn" data-value="H" title="High">H</button>
+                        </div>
+                    </div>
+                    <!-- Availability Impact -->
+                    <div class="cvss-metric-group">
+                        <label class="cvss-metric-label">Availability (A)</label>
+                        <div class="cvss-btn-group" data-metric="A" data-finding="{{ finding.id }}">
+                            <button type="button" class="cvss-btn" data-value="N" title="None">N</button>
+                            <button type="button" class="cvss-btn" data-value="L" title="Low">L</button>
+                            <button type="button" class="cvss-btn" data-value="H" title="High">H</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="cvss-result" id="cvss-result-{{ finding.id }}" style="display:none;">
+                    <span>CVSS Vector: <code class="mono" id="cvss-vector-{{ finding.id }}"></code></span>
+                    <span class="cvss-rating" id="cvss-rating-{{ finding.id }}"></span>
+                </div>
+            </div>
+
+            <!-- Finding Triage Panel -->
+            <div class="triage-box">
+                <div class="triage-header">
+                    <span>Finding Triage Workflow</span>
+                    <span class="text-dim text-xs">ID: #{{ finding.id }}</span>
+                </div>
+                <div class="triage-form-row">
+                    <select class="triage-select" id="triage-status-{{ finding.id }}">
+                        <option value="active" {% if not finding.triage_status or finding.triage_status.value == 'active' %}selected{% endif %}>Active (Investigating)</option>
+                        <option value="accepted_risk" {% if finding.triage_status and finding.triage_status.value == 'accepted_risk' %}selected{% endif %}>Accepted Risk</option>
+                        <option value="false_positive" {% if finding.triage_status and finding.triage_status.value == 'false_positive' %}selected{% endif %}>False Positive</option>
+                    </select>
+                    <input type="text" class="triage-notes-input" id="triage-notes-{{ finding.id }}" placeholder="Triage justification or notes..." value="{{ finding.triage_notes or '' }}">
+                    <button type="button" class="btn btn-sm btn-secondary btn-save-triage" data-scan-id="{{ scan.id }}" data-finding-id="{{ finding.id }}">
+                        Save Triage
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </article>
+    {% else %}
+    <div class="panel empty-state">
+        <div class="panel-body">
+            <h3>No Security Findings Recorded</h3>
+            <p class="text-muted">No header or configuration anomalies were identified for this target host.</p>
+        </div>
+    </div>
+    {% endfor %}
+
+    {% if diff_data is defined and diff_data.resolved_titles %}
+    <div class="panel" style="margin-top: 20px; border-color: rgba(34, 197, 94, 0.3);">
+        <div class="panel-header" style="background: rgba(34, 197, 94, 0.05);">
+            <h3 style="color: var(--ok); font-size: 14px; margin: 0;">Resolved Findings Since Previous Scan ({{ diff_data.resolved_titles|length }})</h3>
+        </div>
+        <div class="panel-body" style="padding: 12px 20px;">
+            <ul style="margin: 0; padding-left: 20px; color: var(--text-2); font-size: 13.5px;">
+                {% for title in diff_data.resolved_titles %}
+                <li style="margin-bottom: 4px;"><span class="badge-diff resolved" style="margin-right: 8px;">RESOLVED</span>{{ title }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="panel empty-state hidden" id="no-results-state">
+        <div class="panel-body">
+            <h3>No findings match your filters</h3>
+            <p class="text-muted">Try a different severity or clear your search keyword.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/results.js') }}"></script>
+{% endblock %}

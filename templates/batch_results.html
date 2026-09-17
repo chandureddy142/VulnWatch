@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Batch Audit Results — VulnWatch | Passive VAPT &amp; Attack Surface Auditor{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/results.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="results-header panel">
+    <div class="panel-body">
+        <div class="header-card-main">
+            <div>
+                <span class="eyebrow">// MULTI-TARGET BATCH AUDIT RESULTS</span>
+                <h1 class="mono target-title">Executive Batch Audit Summary</h1>
+                <div class="header-meta text-dim">
+                    <span>Targets Audited: <strong class="text-1">{{ aggregate_metrics.total_targets }}</strong></span>
+                    <span class="meta-sep">&bull;</span>
+                    <span>Average Score: <strong class="text-1">{{ aggregate_metrics.avg_posture_score }}/100</strong> ({{ aggregate_metrics.avg_posture_tier }})</span>
+                    <span class="meta-sep">&bull;</span>
+                    <span>Total Findings: <strong class="text-1">{{ aggregate_metrics.total_findings }}</strong></span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <a href="/scanner" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                    New Assessment
+                </a>
+                <a href="/dashboard" class="btn">Dashboard</a>
+            </div>
+        </div>
+
+        <!-- Aggregate Summary Metrics Cards -->
+        <div class="batch-metrics-grid">
+            <div class="batch-metric-card">
+                <span class="metric-label">Targets Audited</span>
+                <span class="metric-value">{{ aggregate_metrics.total_targets }}</span>
+            </div>
+            <div class="batch-metric-card">
+                <span class="metric-label">Avg Posture Score</span>
+                <span class="metric-value posture-score-val" data-score="{{ aggregate_metrics.avg_posture_score }}">{{ aggregate_metrics.avg_posture_score }}</span>
+                <span class="metric-sub">{{ aggregate_metrics.avg_posture_tier }}</span>
+            </div>
+            <div class="batch-metric-card">
+                <span class="metric-label">Total Findings</span>
+                <span class="metric-value">{{ aggregate_metrics.total_findings }}</span>
+            </div>
+            <div class="batch-metric-card">
+                <span class="metric-label">Critical / High Risk</span>
+                <span class="metric-value text-critical">{{ aggregate_metrics.critical_count + aggregate_metrics.high_count }}</span>
+            </div>
+        </div>
+
+        <div class="severity-bar" style="margin-top: 20px;">
+            <div class="sev-pill" data-sev="critical">Critical <strong>{{ aggregate_metrics.critical_count }}</strong></div>
+            <div class="sev-pill" data-sev="high">High <strong>{{ aggregate_metrics.high_count }}</strong></div>
+            <div class="sev-pill" data-sev="medium">Medium <strong>{{ aggregate_metrics.medium_count }}</strong></div>
+            <div class="sev-pill" data-sev="low">Low <strong>{{ aggregate_metrics.low_count }}</strong></div>
+            <div class="sev-pill" data-sev="info">Info <strong>{{ aggregate_metrics.info_count }}</strong></div>
+        </div>
+    </div>
+</div>
+
+<!-- Comparison Table -->
+<div class="panel">
+    <div class="panel-header flex-between" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px;">
+        <h2 style="margin: 0; font-size: 16px;">Per-Target Audit Comparison</h2>
+        <span class="text-dim text-xs">Batch IDs: #{{ scan_ids_str }}</span>
+    </div>
+    <div class="panel-body p-0" style="padding: 0; overflow-x: auto;">
+        <table class="batch-table">
+            <thead>
+                <tr>
+                    <th>Target Host / URL</th>
+                    <th>Status Code</th>
+                    <th>Posture Score</th>
+                    <th>Findings Breakdown</th>
+                    <th>Detail View</th>
+                    <th>Export Reports</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in scans_data %}
+                {% set scan = item.model %}
+                <tr>
+                    <td>
+                        <div class="mono font-bold text-1" style="word-break: break-all;">{{ scan.target_url }}</div>
+                        <div class="text-dim text-xs">Scan ID: #{{ scan.id }} &bull; {{ scan.started_at.strftime("%Y-%m-%d %H:%M") }}</div>
+                    </td>
+                    <td>
+                        <span class="badge-status-code">{{ scan.status_code or 'N/A' }}</span>
+                    </td>
+                    <td>
+                        <span class="badge-score" data-score="{{ item.posture_score }}">{{ item.posture_score }}/100</span>
+                        <div class="text-xs text-dim" style="margin-top: 2px;">{{ item.posture_tier }}</div>
+                    </td>
+                    <td>
+                        <div class="finding-tags">
+                            {% if scan.critical_count > 0 %}<span class="tag-sev critical" title="Critical">{{ scan.critical_count }} Critical</span>{% endif %}
+                            {% if scan.high_count > 0 %}<span class="tag-sev high" title="High">{{ scan.high_count }} High</span>{% endif %}
+                            {% if scan.medium_count > 0 %}<span class="tag-sev medium" title="Medium">{{ scan.medium_count }} Med</span>{% endif %}
+                            {% if scan.low_count > 0 %}<span class="tag-sev low" title="Low">{{ scan.low_count }} Low</span>{% endif %}
+                            {% if scan.info_count > 0 %}<span class="tag-sev info" title="Info">{{ scan.info_count }} Info</span>{% endif %}
+                            {% if scan.critical_count == 0 and scan.high_count == 0 and scan.medium_count == 0 and scan.low_count == 0 and scan.info_count == 0 %}
+                            <span class="text-dim text-xs" style="color: var(--ok);">Clean</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <a href="/reports/{{ scan.id }}" class="btn btn-sm btn-secondary">
+                            View Findings ({{ scan.findings|length }})
+                        </a>
+                    </td>
+                    <td>
+                        <div class="btn-group-sm">
+                            <a href="/reports/{{ scan.id }}/pdf" class="btn btn-xs">PDF</a>
+                            <a href="/reports/{{ scan.id }}/json" class="btn btn-xs">JSON</a>
+                            <a href="/reports/{{ scan.id }}/html" class="btn btn-xs">HTML</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

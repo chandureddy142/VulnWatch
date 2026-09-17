@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGuard Security Audit - http://testaspnet.vulnweb.com/login.aspx</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --critical: #ef4444;
+            --high: #f97316;
+            --medium: #f59e0b;
+            --low: #3b82f6;
+            --info: #64748b;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .header {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        .header h1 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.75rem;
+            color: #38bdf8;
+        }
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .summary-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .summary-card .count {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-top: 0.25rem;
+        }
+        .sev-critical { color: var(--critical); border-top: 4px solid var(--critical); }
+        .sev-high { color: var(--high); border-top: 4px solid var(--high); }
+        .sev-medium { color: var(--medium); border-top: 4px solid var(--medium); }
+        .sev-low { color: var(--low); border-top: 4px solid var(--low); }
+        .sev-info { color: var(--info); border-top: 4px solid var(--info); }
+        
+        .finding-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .finding-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        .finding-title h3 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #ffffff;
+            text-transform: uppercase;
+        }
+        .badge-CRITICAL { background-color: var(--critical); }
+        .badge-HIGH { background-color: var(--high); }
+        .badge-MEDIUM { background-color: var(--medium); }
+        .badge-LOW { background-color: var(--low); }
+        .badge-INFO { background-color: var(--info); }
+        
+        .field-label {
+            font-weight: bold;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            margin-top: 1rem;
+        }
+        .evidence-box {
+            background-color: #090d16;
+            border: 1px solid var(--border-color);
+            padding: 0.75rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #a5f3fc;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>WebGuard Executive Security Posture Audit</h1>
+            <div>Target: <strong>http://testaspnet.vulnweb.com/login.aspx</strong></div>
+            <div class="meta-grid">
+                <div>Scan ID: #8</div>
+                <div>Status: COMPLETED</div>
+                <div>Started: 2026-09-17T10:23:13.142119</div>
+                <div>Completed: 2026-09-17T10:23:14.472698</div>
+            </div>
+        </div>
+
+        <h2>Executive Severity Summary</h2>
+        <div class="summary-grid">
+            <div class="summary-card sev-critical">
+                <div>CRITICAL</div>
+                <div class="count">0</div>
+            </div>
+            <div class="summary-card sev-high">
+                <div>HIGH</div>
+                <div class="count">1</div>
+            </div>
+            <div class="summary-card sev-medium">
+                <div>MEDIUM</div>
+                <div class="count">3</div>
+            </div>
+            <div class="summary-card sev-low">
+                <div>LOW</div>
+                <div class="count">3</div>
+            </div>
+            <div class="summary-card sev-info">
+                <div>INFO</div>
+                <div class="count">2</div>
+            </div>
+        </div>
+
+        <h2>Detailed Assessment Findings (9)</h2>
+    
+        <div class="finding-card">
+            <div class="finding-title">
+                <h3>Missing Content Security Policy (CSP)</h3>
+                <span class="badge badge-HIGH">HIGH</span>
+            </div>
+            <div><strong>Category:</strong> Security Headers | <strong>Affected URL:</strong> <code>http://testaspnet.vulnweb.com/login.aspx</code></div>
+            
+            <div class="field-label">Description</div>
+            <div>Content Security Policy header is not present. CSP prevents Cross-Site Scripting (XSS) and data injection attacks.</div>
+            
+            <div class="field-label">Evidence</div>
+            <div class="evidence-box">{&#x27;header&#x27;: &#x27;Content-Security-Policy&#x27;, &#x27;status&#x27;: &#x27;Missing&#x27;, &#x27;owasp_link&#x27;: &#x27;https://cheatsheetseries.owasp.org/index.html&#x27;}</div>
+            
+            <div class="field-label">Remediation Action</div>
+            <div>Implement a strong Content-Security-Policy header restricting script execution and resource loading.</div>
+        </div>
+        
+        <div class="finding-card">
+            <div class="finding-title">
+                <h3>Missing X-Frame-Options Header</h3>
+                <span class="badge badge-MEDIUM">MEDIUM</span>
+            </div>
+            <div><strong>Category:</strong> Security Headers | <strong>Affected URL:</strong> <code>http://testaspnet.vulnweb.com/login.aspx</code></div>
+            
+            <div class="field-label">Description</div>
+            <div>The X-Frame-Options header is absent, rendering the application potentially susceptible to Clickjacking framing attacks.</div>
+            
+            <div class="field-label">Evidence</div>
+            <div class="evidence-box">{&#x27;header&#x27;: &#x27;X-Frame-Options&#x27;, &#x27;status&#x27;: &#x27;Missing&#x27;, &#x27;owasp_link&#x27;: &#x27;https://cheatsheetseries.owasp.org/index.html&#x27;}</div>
+            
+            <div class="field-label">Remediation Action</div>
+            <div>Configure &#x27;X-Frame-Options: DENY&#x27; or &#x27;X-Frame-Options: SAMEORIGIN&#x27; on HTTP responses.</div>
+        </div>
+        
+        <div class="finding-card">
+            <div class="finding-title">
+                <h3>Missing or Invalid X-Content-Type-Options Header</h3>
+                <span class="badge badge-MEDIUM">MEDIUM</span>
+            </div>
+            <div><strong>Category:</strong> Security Headers | <strong>Affected URL:</strong> <code>http://testaspnet.vulnweb.com/login.aspx</code></div>
+            
+            <div class="field-label">Description</div>
+            <div>Missing &#x27;X-Content-Type-Options: nosniff&#x27; header allows browsers to MIME-sniff response content types, potentially executing untrusted assets.</div>
+            
+            <div class="field-label">Evidence</div>
+            <div class="evidence-box">{&#x27;header&#x27;: &#x27;X-Content-Type-Options&#x27;, &#x27;value&#x27;: &#x27;Missing&#x27;, &#x27;owasp_link&#x27;: &#x27;https://cheatsheetseries.owasp.org/index.html&#x27;}</div>
+            
+            <div class="field-label">Remediation Action</div>
+            <div>Set &#x27;X-Content-Type-Options: nosniff&#x27; header across all responses.</div>
+        </div>
+        
+        <div class="finding-card">
+            <div class="finding-title">
+                <h3>Missing Referrer-Policy Header</h3>
+                <span class="badge badge-LOW">LOW</span>
+            </div>
+            <div><strong>Category:</strong> Security Headers | <strong>Affected URL:</strong> <code>http://testaspnet.vulnweb.com/login.aspx</code></div>
+            
+            <div class="field-label">Description</div>
+            <div>No Referrer-Policy header specified. Browsers may send full referrer URLs containing sensitive path parameters.</div>
+            
+            <div class="field-label">Evidence</div>
+            <div class="evidence-box">{&#x27;header&#x27;: &#x27;Referrer-Policy&#x27;, &#x27;status&#x27;: &#x27;Missing&#x27;, &#x27;owasp_link&#x27;: &#x27;https://cheatsheetseries.owasp.org/index.html&#x27;}</div>
+            
+            <div class="field-label">Remediation Action</div>
+            <div>Set &#x27;Referrer-Policy: strict-origin-when-cross-origin&#x27; or &#x27;no-referrer&#x27;.</div>
+        </div>
+        
+        <div class="finding-card">
+            <div class="finding-title">
+                <h3>Missing Permissions-Policy Header</h3>
+                <span class="badge badge-INFO">INFO</span>
+            </div>
+            <div><strong>Category:</strong> Security Headers | <strong>Affected URL:</strong> <code>http://testaspnet.vulnweb.com/login.aspx</code></div>
+            
+            <div class="field-label">Description</div>
+            <div>Permissions-Policy header is missing. Controlling browser features (geolocation, camera, microphone) is recommended.</div>
+            
+            <div class="field-label">Evidence</div>
+            <div class="evidence-box">{&#x27;header&#x27;: &#x27;Permissions-Policy&#x27;, &#x27;status&#x27;: &#x27;Missing&#x27;, &#x27;owasp_link&#x27;: &#x27;https://cheatsheetseries.owasp.org/index.html&#x27;}</div>
+            
+            <div class="field-label">Remediation Action</div>
+            <div>Define a Permissions-Policy header to restrict access to hardware APIs.</div>
+        </div>
+        
+        <div class="finding-card">
+            <div class="finding-title">
+                <h3>Server Technology Information Leakage (X-Powered-By)</h3>
+                <span class="badge badge-LOW">LOW</span>
+            </div>
+            <div><strong>Category:</strong> Information Disclosure | <strong>Affected URL:</strong> <code>http://testaspnet.vulnweb.com/login.aspx</code></div>
+            
+            <div class="field-label">Description</div>
+            <div>The server leaks detailed backend technology stack information: &#x27;ASP.NET&#x27;.</div>
+            
+            <div class="field-label">Evidence</div>
+            <div class="evidence-box">{&#x27;header&#x27;: &#x27;X-Powered-By&#x27;, &#x27;value&#x27;: &#x27;ASP.NET&#x27;, &#x27;owasp_link&#x27;: &#x27;https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html&#x27;}</div>
+            
+            <div class="field-label">Remediation Action</div>
+            <div>Disable or strip X-Powered-By response headers in server configurations.</div>
+        </div>
+        
+        <div class="finding-card">
+            <div class="finding-title">
+                <h3>Server Software Version Disclosure</h3>
+                <span class="badge badge-INFO">INFO</span>
+            </div>
+            <div><strong>Category:</strong> Information Disclosure | <strong>Affected URL:</strong> <code>http://testaspnet.vulnweb.com/login.aspx</code></div>
+            
+            <div class="field-label">Description</div>
+            <div>The Server header discloses precise software version numbers: &#x27;Microsoft-IIS/8.5&#x27;.</div>
+            
+            <div class="field-label">Evidence</div>
+            <div class="evidence-box">{&#x27;header&#x27;: &#x27;Server&#x27;, &#x27;value&#x27;: &#x27;Microsoft-IIS/8.5&#x27;, &#x27;owasp_link&#x27;: &#x27;https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html&#x27;}</div>
+            
+            <div class="field-label">Remediation Action</div>
+            <div>Configure web server to suppress banner version details (e.g., ServerTokens Prod in Apache, server_tokens off in Nginx).</div>
+        </div>
+        
+        <div class="finding-card">
+            <div class="finding-title">
+                <h3>Cookie Missing SameSite Attribute (ASP.NET_SessionId)</h3>
+                <span class="badge badge-LOW">LOW</span>
+            </div>
+            <div><strong>Category:</strong> Cookie Security | <strong>Affected URL:</strong> <code>http://testaspnet.vulnweb.com/login.aspx</code></div>
+            
+            <div class="field-label">Description</div>
+            <div>The cookie &#x27;ASP.NET_SessionId&#x27; does not specify a SameSite attribute, which exposes cross-site requests to CSRF vulnerabilities.</div>
+            
+            <div class="field-label">Evidence</div>
+            <div class="evidence-box">{&#x27;cookie&#x27;: &#x27;ASP.NET_SessionId=izgdnwjwuid5b345zeudyau2; path=/; HttpOnly&#x27;, &#x27;missing&#x27;: &#x27;SameSite&#x27;, &#x27;owasp_link&#x27;: &#x27;https://cheatsheetseries.owasp.org/index.html&#x27;}</div>
+            
+            <div class="field-label">Remediation Action</div>
+            <div>Append &#x27;; SameSite=Lax&#x27; or &#x27;; SameSite=Strict&#x27; to the Set-Cookie header for &#x27;ASP.NET_SessionId&#x27;.</div>
+        </div>
+        
+        <div class="finding-card">
+            <div class="finding-title">
+                <h3>Cross-Site Tracing (XST) Potential - TRACE/TRACK Enabled</h3>
+                <span class="badge badge-MEDIUM">MEDIUM</span>
+            </div>
+            <div><strong>Category:</strong> HTTP Method Security | <strong>Affected URL:</strong> <code>http://testaspnet.vulnweb.com/login.aspx</code></div>
+            
+            <div class="field-label">Description</div>
+            <div>Server advertises support for HTTP TRACE/TRACK methods (TRACE). TRACE reflects raw requests back to clients and can leak sensitive headers or credentials.</div>
+            
+            <div class="field-label">Evidence</div>
+            <div class="evidence-box">{&#x27;allowed_methods&#x27;: [&#x27;OPTIONS&#x27;, &#x27;TRACE&#x27;, &#x27;GET&#x27;, &#x27;HEAD&#x27;, &#x27;POST&#x27;], &#x27;risky&#x27;: [&#x27;TRACE&#x27;], &#x27;owasp_link&#x27;: &#x27;https://cheatsheetseries.owasp.org/index.html&#x27;}</div>
+            
+            <div class="field-label">Remediation Action</div>
+            <div>Disable HTTP TRACE and TRACK methods in web server configuration.</div>
+        </div>
+        
+    </div>
+</body>
+</html>
+    

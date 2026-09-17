@@ -1,0 +1,106 @@
+{
+  "webguard_version": "1.0.0",
+  "scan": {
+    "id": 14,
+    "target_url": "https://chandureddy.in/",
+    "status": "COMPLETED",
+    "started_at": "2026-09-17T10:33:01.454639",
+    "completed_at": "2026-09-17T10:33:01.891293",
+    "severity_summary": {
+      "critical": 0,
+      "high": 1,
+      "medium": 2,
+      "low": 1,
+      "info": 1
+    },
+    "status_code": 200,
+    "findings_count": 5
+  },
+  "findings": [
+    {
+      "id": 65,
+      "scan_id": 14,
+      "title": "Missing Content Security Policy (CSP)",
+      "category": "Security Headers",
+      "severity": "HIGH",
+      "description": "Content Security Policy header is not present. CSP prevents Cross-Site Scripting (XSS) and data injection attacks.",
+      "remediation": "Implement a strong Content-Security-Policy header restricting script execution and resource loading.",
+      "affected_url": "https://chandureddy.in/",
+      "evidence": {
+        "header": "Content-Security-Policy",
+        "status": "Missing",
+        "owasp_link": "https://cheatsheetseries.owasp.org/index.html"
+      },
+      "triage_status": "active",
+      "triage_notes": null
+    },
+    {
+      "id": 66,
+      "scan_id": 14,
+      "title": "Missing X-Frame-Options Header",
+      "category": "Security Headers",
+      "severity": "MEDIUM",
+      "description": "The X-Frame-Options header is absent, rendering the application potentially susceptible to Clickjacking framing attacks.",
+      "remediation": "Configure 'X-Frame-Options: DENY' or 'X-Frame-Options: SAMEORIGIN' on HTTP responses.",
+      "affected_url": "https://chandureddy.in/",
+      "evidence": {
+        "header": "X-Frame-Options",
+        "status": "Missing",
+        "owasp_link": "https://cheatsheetseries.owasp.org/index.html"
+      },
+      "triage_status": "active",
+      "triage_notes": null
+    },
+    {
+      "id": 67,
+      "scan_id": 14,
+      "title": "Missing or Invalid X-Content-Type-Options Header",
+      "category": "Security Headers",
+      "severity": "MEDIUM",
+      "description": "Missing 'X-Content-Type-Options: nosniff' header allows browsers to MIME-sniff response content types, potentially executing untrusted assets.",
+      "remediation": "Set 'X-Content-Type-Options: nosniff' header across all responses.",
+      "affected_url": "https://chandureddy.in/",
+      "evidence": {
+        "header": "X-Content-Type-Options",
+        "value": "Missing",
+        "owasp_link": "https://cheatsheetseries.owasp.org/index.html"
+      },
+      "triage_status": "active",
+      "triage_notes": null
+    },
+    {
+      "id": 68,
+      "scan_id": 14,
+      "title": "Missing Referrer-Policy Header",
+      "category": "Security Headers",
+      "severity": "LOW",
+      "description": "No Referrer-Policy header specified. Browsers may send full referrer URLs containing sensitive path parameters.",
+      "remediation": "Set 'Referrer-Policy: strict-origin-when-cross-origin' or 'no-referrer'.",
+      "affected_url": "https://chandureddy.in/",
+      "evidence": {
+        "header": "Referrer-Policy",
+        "status": "Missing",
+        "owasp_link": "https://cheatsheetseries.owasp.org/index.html"
+      },
+      "triage_status": "active",
+      "triage_notes": null
+    },
+    {
+      "id": 69,
+      "scan_id": 14,
+      "title": "Missing Permissions-Policy Header",
+      "category": "Security Headers",
+      "severity": "INFO",
+      "description": "Permissions-Policy header is missing. Controlling browser features (geolocation, camera, microphone) is recommended.",
+      "remediation": "Define a Permissions-Policy header to restrict access to hardware APIs.",
+      "affected_url": "https://chandureddy.in/",
+      "evidence": {
+        "header": "Permissions-Policy",
+        "status": "Missing",
+        "owasp_link": "https://cheatsheetseries.owasp.org/index.html"
+      },
+      "triage_status": "active",
+      "triage_notes": null
+    }
+  ]
+}

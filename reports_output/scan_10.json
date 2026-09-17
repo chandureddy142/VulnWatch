@@ -1,0 +1,199 @@
+{
+  "webguard_version": "1.0.0",
+  "scan": {
+    "id": 10,
+    "target_url": "http://testasp.vulnweb.com/",
+    "status": "COMPLETED",
+    "started_at": "2026-09-17T10:24:11.750504",
+    "completed_at": "2026-09-17T10:24:12.792580",
+    "severity_summary": {
+      "critical": 0,
+      "high": 1,
+      "medium": 4,
+      "low": 3,
+      "info": 2
+    },
+    "status_code": 200,
+    "findings_count": 10
+  },
+  "findings": [
+    {
+      "id": 48,
+      "scan_id": 10,
+      "title": "Missing Content Security Policy (CSP)",
+      "category": "Security Headers",
+      "severity": "HIGH",
+      "description": "Content Security Policy header is not present. CSP prevents Cross-Site Scripting (XSS) and data injection attacks.",
+      "remediation": "Implement a strong Content-Security-Policy header restricting script execution and resource loading.",
+      "affected_url": "http://testasp.vulnweb.com/",
+      "evidence": {
+        "header": "Content-Security-Policy",
+        "status": "Missing",
+        "owasp_link": "https://cheatsheetseries.owasp.org/index.html"
+      },
+      "triage_status": "active",
+      "triage_notes": null
+    },
+    {
+      "id": 49,
+      "scan_id": 10,
+      "title": "Missing X-Frame-Options Header",
+      "category": "Security Headers",
+      "severity": "MEDIUM",
+      "description": "The X-Frame-Options header is absent, rendering the application potentially susceptible to Clickjacking framing attacks.",
+      "remediation": "Configure 'X-Frame-Options: DENY' or 'X-Frame-Options: SAMEORIGIN' on HTTP responses.",
+      "affected_url": "http://testasp.vulnweb.com/",
+      "evidence": {
+        "header": "X-Frame-Options",
+        "status": "Missing",
+        "owasp_link": "https://cheatsheetseries.owasp.org/index.html"
+      },
+      "triage_status": "active",
+      "triage_notes": null
+    },
+    {
+      "id": 50,
+      "scan_id": 10,
+      "title": "Missing or Invalid X-Content-Type-Options Header",
+      "category": "Security Headers",
+      "severity": "MEDIUM",
+      "description": "Missing 'X-Content-Type-Options: nosniff' header allows browsers to MIME-sniff response content types, potentially executing untrusted assets.",
+      "remediation": "Set 'X-Content-Type-Options: nosniff' header across all responses.",
+      "affected_url": "http://testasp.vulnweb.com/",
+      "evidence": {
+        "header": "X-Content-Type-Options",
+        "value": "Missing",
+        "owasp_link": "https://cheatsheetseries.owasp.org/index.html"
+      },
+      "triage_status": "active",
+      "triage_notes": null
+    },
+    {
+      "id": 51,
+      "scan_id": 10,
+      "title": "Missing Referrer-Policy Header",
+      "category": "Security Headers",
+      "severity": "LOW",
+      "description": "No Referrer-Policy header specified. Browsers may send full referrer URLs containing sensitive path parameters.",
+      "remediation": "Set 'Referrer-Policy: strict-origin-when-cross-origin' or 'no-referrer'.",
+      "affected_url": "http://testasp.vulnweb.com/",
+      "evidence": {
+        "header": "Referrer-Policy",
+        "status": "Missing",
+        "owasp_link": "https://cheatsheetseries.owasp.org/index.html"
+      },
+      "triage_status": "active",
+      "triage_notes": null
+    },
+    {
+      "id": 52,
+      "scan_id": 10,
+      "title": "Missing Permissions-Policy Header",
+      "category": "Security Headers",
+      "severity": "INFO",
+      "description": "Permissions-Policy header is missing. Controlling browser features (geolocation, camera, microphone) is recommended.",
+      "remediation": "Define a Permissions-Policy header to restrict access to hardware APIs.",
+      "affected_url": "http://testasp.vulnweb.com/",
+      "evidence": {
+        "header": "Permissions-Policy",
+        "status": "Missing",
+        "owasp_link": "https://cheatsheetseries.owasp.org/index.html"
+      },
+      "triage_status": "active",
+      "triage_notes": null
+    },
+    {
+      "id": 53,
+      "scan_id": 10,
+      "title": "Server Technology Information Leakage (X-Powered-By)",
+      "category": "Information Disclosure",
+      "severity": "LOW",
+      "description": "The server leaks detailed backend technology stack information: 'ASP.NET'.",
+      "remediation": "Disable or strip X-Powered-By response headers in server configurations.",
+      "affected_url": "http://testasp.vulnweb.com/",
+      "evidence": {
+        "header": "X-Powered-By",
+        "value": "ASP.NET",
+        "owasp_link": "https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html"
+      },
+      "triage_status": "active",
+      "triage_notes": null
+    },
+    {
+      "id": 54,
+      "scan_id": 10,
+      "title": "Server Software Version Disclosure",
+      "category": "Information Disclosure",
+      "severity": "INFO",
+      "description": "The Server header discloses precise software version numbers: 'Microsoft-IIS/8.5'.",
+      "remediation": "Configure web server to suppress banner version details (e.g., ServerTokens Prod in Apache, server_tokens off in Nginx).",
+      "affected_url": "http://testasp.vulnweb.com/",
+      "evidence": {
+        "header": "Server",
+        "value": "Microsoft-IIS/8.5",
+        "owasp_link": "https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html"
+      },
+      "triage_status": "active",
+      "triage_notes": null
+    },
+    {
+      "id": 55,
+      "scan_id": 10,
+      "title": "Cookie Missing HttpOnly Flag (ASPSESSIONIDACCRQCTA)",
+      "category": "Cookie Security",
+      "severity": "MEDIUM",
+      "description": "The cookie 'ASPSESSIONIDACCRQCTA' lacks the HttpOnly attribute, allowing client-side scripts to access cookie data via Document.cookie (increasing XSS session hijacking risk).",
+      "remediation": "Append '; HttpOnly' to the Set-Cookie definition for 'ASPSESSIONIDACCRQCTA'.",
+      "affected_url": "http://testasp.vulnweb.com/",
+      "evidence": {
+        "cookie": "ASPSESSIONIDACCRQCTA=PPOIDNBBNDEKCMDOAKBFDPGE; path=/",
+        "missing": "HttpOnly",
+        "owasp_link": "https://cheatsheetseries.owasp.org/index.html"
+      },
+      "triage_status": "active",
+      "triage_notes": null
+    },
+    {
+      "id": 56,
+      "scan_id": 10,
+      "title": "Cookie Missing SameSite Attribute (ASPSESSIONIDACCRQCTA)",
+      "category": "Cookie Security",
+      "severity": "LOW",
+      "description": "The cookie 'ASPSESSIONIDACCRQCTA' does not specify a SameSite attribute, which exposes cross-site requests to CSRF vulnerabilities.",
+      "remediation": "Append '; SameSite=Lax' or '; SameSite=Strict' to the Set-Cookie header for 'ASPSESSIONIDACCRQCTA'.",
+      "affected_url": "http://testasp.vulnweb.com/",
+      "evidence": {
+        "cookie": "ASPSESSIONIDACCRQCTA=PPOIDNBBNDEKCMDOAKBFDPGE; path=/",
+        "missing": "SameSite",
+        "owasp_link": "https://cheatsheetseries.owasp.org/index.html"
+      },
+      "triage_status": "active",
+      "triage_notes": null
+    },
+    {
+      "id": 57,
+      "scan_id": 10,
+      "title": "Cross-Site Tracing (XST) Potential - TRACE/TRACK Enabled",
+      "category": "HTTP Method Security",
+      "severity": "MEDIUM",
+      "description": "Server advertises support for HTTP TRACE/TRACK methods (TRACE). TRACE reflects raw requests back to clients and can leak sensitive headers or credentials.",
+      "remediation": "Disable HTTP TRACE and TRACK methods in web server configuration.",
+      "affected_url": "http://testasp.vulnweb.com/",
+      "evidence": {
+        "allowed_methods": [
+          "OPTIONS",
+          "TRACE",
+          "GET",
+          "HEAD",
+          "POST"
+        ],
+        "risky": [
+          "TRACE"
+        ],
+        "owasp_link": "https://cheatsheetseries.owasp.org/index.html"
+      },
+      "triage_status": "active",
+      "triage_notes": null
+    }
+  ]
+}

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGuard Security Audit - https://testasp.vulnweb.com/</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --critical: #ef4444;
+            --high: #f97316;
+            --medium: #f59e0b;
+            --low: #3b82f6;
+            --info: #64748b;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .header {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        .header h1 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.75rem;
+            color: #38bdf8;
+        }
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .summary-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .summary-card .count {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-top: 0.25rem;
+        }
+        .sev-critical { color: var(--critical); border-top: 4px solid var(--critical); }
+        .sev-high { color: var(--high); border-top: 4px solid var(--high); }
+        .sev-medium { color: var(--medium); border-top: 4px solid var(--medium); }
+        .sev-low { color: var(--low); border-top: 4px solid var(--low); }
+        .sev-info { color: var(--info); border-top: 4px solid var(--info); }
+        
+        .finding-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .finding-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        .finding-title h3 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #ffffff;
+            text-transform: uppercase;
+        }
+        .badge-CRITICAL { background-color: var(--critical); }
+        .badge-HIGH { background-color: var(--high); }
+        .badge-MEDIUM { background-color: var(--medium); }
+        .badge-LOW { background-color: var(--low); }
+        .badge-INFO { background-color: var(--info); }
+        
+        .field-label {
+            font-weight: bold;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            margin-top: 1rem;
+        }
+        .evidence-box {
+            background-color: #090d16;
+            border: 1px solid var(--border-color);
+            padding: 0.75rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #a5f3fc;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>WebGuard Executive Security Posture Audit</h1>
+            <div>Target: <strong>https://testasp.vulnweb.com/</strong></div>
+            <div class="meta-grid">
+                <div>Scan ID: #11</div>
+                <div>Status: FAILED</div>
+                <div>Started: 2026-09-17T10:25:12.123523</div>
+                <div>Completed: 2026-09-17T10:25:17.218742</div>
+            </div>
+        </div>
+
+        <h2>Executive Severity Summary</h2>
+        <div class="summary-grid">
+            <div class="summary-card sev-critical">
+                <div>CRITICAL</div>
+                <div class="count">0</div>
+            </div>
+            <div class="summary-card sev-high">
+                <div>HIGH</div>
+                <div class="count">1</div>
+            </div>
+            <div class="summary-card sev-medium">
+                <div>MEDIUM</div>
+                <div class="count">0</div>
+            </div>
+            <div class="summary-card sev-low">
+                <div>LOW</div>
+                <div class="count">0</div>
+            </div>
+            <div class="summary-card sev-info">
+                <div>INFO</div>
+                <div class="count">0</div>
+            </div>
+        </div>
+
+        <h2>Detailed Assessment Findings (1)</h2>
+    
+        <div class="finding-card">
+            <div class="finding-title">
+                <h3>Target Connection Failure</h3>
+                <span class="badge badge-HIGH">HIGH</span>
+            </div>
+            <div><strong>Category:</strong> Network Connectivity | <strong>Affected URL:</strong> <code>https://testasp.vulnweb.com/</code></div>
+            
+            <div class="field-label">Description</div>
+            <div>Failed to establish connection to target URL: Connection failed or DNS lookup error: HTTPSConnectionPool(host=&#x27;testasp.vulnweb.com&#x27;, port=443): Max retries exceeded with url: / (Caused by NewConnectionError(&#x27;&lt;urllib3.connection.HTTPSConnection object at 0x7f832614e7b0&gt;: Failed to establish a new connection: [Errno 101] Network is unreachable&#x27;))</div>
+            
+            <div class="field-label">Evidence</div>
+            <div class="evidence-box">{&#x27;error&#x27;: &quot;Connection failed or DNS lookup error: HTTPSConnectionPool(host=&#x27;testasp.vulnweb.com&#x27;, port=443): Max retries exceeded with url: / (Caused by NewConnectionError(&#x27;&lt;urllib3.connection.HTTPSConnection object at 0x7f832614e7b0&gt;: Failed to establish a new connection: [Errno 101] Network is unreachable&#x27;))&quot;, &#x27;owasp_link&#x27;: &#x27;https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Security_Cheat_Sheet.html&#x27;}</div>
+            
+            <div class="field-label">Remediation Action</div>
+            <div>Verify target host reachability, DNS configuration, and active listening services.</div>
+        </div>
+        
+    </div>
+</body>
+</html>
+    

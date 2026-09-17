@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  webguard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: webguard-app
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - HOST=0.0.0.0
+      - PORT=5000
+    volumes:
+      - webguard-data:/app/instance
+      - webguard-reports:/app/reports_output
+    restart: unless-stopped
+
+  vulnerable-lab:
+    build:
+      context: ./vulnerable-lab
+      dockerfile: Dockerfile
+    container_name: webguard-vulnerable-lab
+    ports:
+      - "5001:5001"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=5001
+    restart: unless-stopped
+
+volumes:
+  webguard-data:
+  webguard-reports:

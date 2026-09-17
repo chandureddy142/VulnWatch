@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Settings — VulnWatch | Passive VAPT &amp; Attack Surface Auditor{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <span class="eyebrow">// ENTERPRISE CONFIGURATION</span>
+        <h1>Platform Settings & Integrations</h1>
+        <p class="sub">Configure scan defaults, webhooks, alert channels, and REST API access keys.</p>
+    </div>
+</div>
+
+<div class="panel" style="max-width: 800px; margin: 0 auto;">
+    <div class="panel-body">
+        <form id="settings-form">
+
+            <div class="form-group" style="margin-bottom: 24px;">
+                <label for="scan_timeout">Default Scan Timeout (Seconds)</label>
+                <input
+                    type="number"
+                    id="scan_timeout"
+                    name="scan_timeout"
+                    class="mono"
+                    value="{{ settings.scan_timeout }}"
+                    min="1"
+                    max="120"
+                    style="max-width: 160px;"
+                    required>
+                <div class="form-hint">Maximum allowable duration per HTTP discovery probe before timing out (1–120 seconds).</div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 24px;">
+                <label for="webhook_url">Alert Webhook URL (Slack / Discord)</label>
+                <input
+                    type="url"
+                    id="webhook_url"
+                    name="webhook_url"
+                    class="mono"
+                    placeholder="https://hooks.slack.com/services/... or https://discord.com/api/webhooks/..."
+                    value="{{ settings.webhook_url }}"
+                    autocomplete="off">
+                <div class="form-hint">Dispatches immediate JSON notifications whenever Critical or High severity issues are identified.</div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 24px;">
+                <label>Enabled Default Audit Modules</label>
+                <div class="module-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px;">
+                    <label class="module-check">
+                        <input type="checkbox" name="default_modules" value="headers" {% if 'headers' in settings.default_modules %}checked{% endif %}>
+                        <span class="module-check-box" aria-hidden="true"></span>
+                        <span class="module-check-body">
+                            <span class="module-check-title">Security Headers</span>
+                            <span class="module-check-desc">CSP, HSTS, X-Frame-Options</span>
+                        </span>
+                    </label>
+                    <label class="module-check">
+                        <input type="checkbox" name="default_modules" value="cookies" {% if 'cookies' in settings.default_modules %}checked{% endif %}>
+                        <span class="module-check-box" aria-hidden="true"></span>
+                        <span class="module-check-body">
+                            <span class="module-check-title">Cookie Configuration</span>
+                            <span class="module-check-desc">Secure, HttpOnly, SameSite</span>
+                        </span>
+                    </label>
+                    <label class="module-check">
+                        <input type="checkbox" name="default_modules" value="methods" {% if 'methods' in settings.default_modules %}checked{% endif %}>
+                        <span class="module-check-box" aria-hidden="true"></span>
+                        <span class="module-check-body">
+                            <span class="module-check-title">HTTP Verbs</span>
+                            <span class="module-check-desc">TRACE, OPTIONS, HEAD</span>
+                        </span>
+                    </label>
+                    <label class="module-check">
+                        <input type="checkbox" name="default_modules" value="disclosure" {% if 'disclosure' in settings.default_modules %}checked{% endif %}>
+                        <span class="module-check-box" aria-hidden="true"></span>
+                        <span class="module-check-body">
+                            <span class="module-check-title">Info Disclosure</span>
+                            <span class="module-check-desc">Server headers, stack traces</span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <hr style="border: none; border-top: 1px solid var(--border-soft); margin: 24px 0;">
+
+            <div class="form-group" style="margin-bottom: 24px;">
+                <label>REST API Access Key</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input
+                        type="text"
+                        id="api_key_display"
+                        class="mono"
+                        value="{{ settings.api_key or 'No API key generated' }}"
+                        readonly
+                        style="flex: 1; background: var(--bg-card); color: var(--brand);">
+                    <button type="button" id="btn-generate-key" class="btn btn-secondary btn-sm">
+                        Regenerate Key
+                    </button>
+                </div>
+                <div class="form-hint">Use this bearer key to authenticate automated programmatic scan triggers via HTTP API.</div>
+            </div>
+
+            <div class="form-actions" style="margin-top: 24px;">
+                <button type="submit" id="btn-save-settings" class="btn btn-primary">
+                    Save Configuration
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('settings-form');
+    const genKeyBtn = document.getElementById('btn-generate-key');
+    const apiKeyInput = document.getElementById('api_key_display');
+
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const scanTimeout = parseInt(document.getElementById('scan_timeout').value, 10);
+            const webhookUrl = document.getElementById('webhook_url').value.trim();
+
+            const defaultModules = [];
+            document.querySelectorAll('input[name="default_modules"]:checked').forEach(function (cb) {
+                defaultModules.push(cb.value);
+            });
+
+            const btn = document.getElementById('btn-save-settings');
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            fetch('/settings/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    scan_timeout: scanTimeout,
+                    webhook_url: webhookUrl,
+                    default_modules: defaultModules
+                })
+            })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (window.showToast) {
+                        window.showToast('Settings configuration saved successfully.', 'success');
+                    }
+                })
+                .catch(function (err) {
+                    if (window.showToast) {
+                        window.showToast('Failed to save settings: ' + err.message, 'error');
+                    }
+                })
+                .finally(function () {
+                    btn.disabled = false;
+                    btn.textContent = 'Save Configuration';
+                });
+        });
+    }
+
+    if (genKeyBtn && apiKeyInput) {
+        genKeyBtn.addEventListener('click', function () {
+            if (!confirm('Are you sure you want to regenerate your API key? The existing key will be invalidated immediately.')) {
+                return;
+            }
+
+            genKeyBtn.disabled = true;
+            fetch('/settings/generate-api-key', { method: 'POST' })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    apiKeyInput.value = data.api_key;
+                    if (window.showToast) {
+                        window.showToast('New API key generated successfully.', 'success');
+                    }
+                })
+                .catch(function (err) {
+                    if (window.showToast) {
+                        window.showToast('Failed to generate key: ' + err.message, 'error');
+                    }
+                })
+                .finally(function () {
+                    genKeyBtn.disabled = false;
+                });
+        });
+    }
+});
+</script>
+{% endblock %}

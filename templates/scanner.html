@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}Launch Audit — VulnWatch | Passive VAPT &amp; Attack Surface Auditor{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/scanner.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="scanner-layout">
+    <div class="scanner-main">
+        <div class="page-header">
+            <div>
+                <span class="eyebrow">// NEW ASSESSMENT</span>
+                <h1>Configure Target Assessment</h1>
+                <p class="sub">Execute passive security posture, header compliance, and cookie attribute audits.</p>
+            </div>
+        </div>
+
+        {% if active_scan_count is defined and active_scan_count > 0 %}
+        <div class="active-scans-card" role="status">
+            <div class="active-scans-info">
+                <span class="pulse-dot" aria-hidden="true"></span>
+                <span><strong>{{ active_scan_count }}</strong> scan(s) currently running or pending in background.</span>
+            </div>
+            <button type="button" id="btn-view-queue" class="btn btn-secondary btn-sm">View Status</button>
+        </div>
+        {% endif %}
+
+        <div class="panel">
+            <!-- Mode Toggle Tabs -->
+            <div class="scan-mode-tabs" role="tablist">
+                <button type="button" class="mode-tab active" id="tab-single" role="tab" aria-selected="true" data-mode="single">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+                    Single Target Audit
+                </button>
+                <button type="button" class="mode-tab" id="tab-batch" role="tab" aria-selected="false" data-mode="batch">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    Multi-Target Batch Audit
+                </button>
+            </div>
+
+            <form id="scan-form" action="/scan" method="POST" novalidate>
+                <input type="hidden" id="scan_mode" name="scan_mode" value="single">
+                <div class="panel-body">
+
+                    <!-- Single Target Input -->
+                    <div class="form-group" id="group-single-target">
+                        <label for="target_url">Target URL / Hostname</label>
+                        <div class="url-input-wrap">
+                            <span class="url-protocol-tag mono" id="protocol-tag">https://</span>
+                            <input
+                                type="text"
+                                id="target_url"
+                                name="target_url"
+                                class="mono"
+                                placeholder="example.com or 127.0.0.1:8080"
+                                autocomplete="off"
+                                spellcheck="false"
+                                required>
+                        </div>
+                        <div class="form-hint">Must be an authorized local or approved network target URL. A protocol is added automatically if you omit one.</div>
+                    </div>
+
+                    <!-- Batch Targets Input (Hidden by default) -->
+                    <div class="form-group hidden" id="group-batch-targets">
+                        <label for="batch_targets">Target URLs / Hostnames (One per line)</label>
+                        <textarea
+                            id="batch_targets"
+                            name="batch_targets"
+                            class="mono batch-textarea"
+                            rows="5"
+                            placeholder="https://example.com&#10;&#10;127.0.0.1:5001"
+                            spellcheck="false"></textarea>
+                        <div class="form-hint">Enter target URLs or IP addresses separated by newlines. VulnWatch will execute sequential passive posture assessments on each target.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Active Audit Modules</label>
+                        <div class="module-grid">
+                            <label class="module-check">
+                                <input type="checkbox" name="module_headers" value="true" checked>
+                                <span class="module-check-box" aria-hidden="true"></span>
+                                <span class="module-check-body">
+                                    <span class="module-check-title">Security Headers</span>
+                                    <span class="module-check-desc">CSP, HSTS, X-Frame-Options, and related response headers</span>
+                                </span>
+                            </label>
+                            <label class="module-check">
+                                <input type="checkbox" name="module_cookies" value="true" checked>
+                                <span class="module-check-box" aria-hidden="true"></span>
+                                <span class="module-check-body">
+                                    <span class="module-check-title">Cookie Configuration</span>
+                                    <span class="module-check-desc">Secure, HttpOnly, and SameSite attribute checks</span>
+                                </span>
+                            </label>
+                            <label class="module-check">
+                                <input type="checkbox" name="module_methods" value="true" checked>
+                                <span class="module-check-box" aria-hidden="true"></span>
+                                <span class="module-check-body">
+                                    <span class="module-check-title">HTTP Methods</span>
+                                    <span class="module-check-desc">Enumerates allowed and potentially unsafe HTTP verbs</span>
+                                </span>
+                            </label>
+                            <label class="module-check">
+                                <input type="checkbox" name="module_disclosure" value="true" checked>
+                                <span class="module-check-box" aria-hidden="true"></span>
+                                <span class="module-check-body">
+                                    <span class="module-check-title">Information Disclosure</span>
+                                    <span class="module-check-desc">Server banners, stack traces, and verbose error leakage</span>
+                                </span>
+                            </label>
+                        </div>
+                        <div class="form-hint">Module toggles are informational for this build; the scan engine currently runs its full passive check set on every audit.</div>
+                    </div>
+
+                    <!-- Mandatory Authorization Confirmation -->
+                    <div class="auth-box">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="auth_confirm" name="authorized" value="true">
+                            <span class="checkbox-checkmark" aria-hidden="true"></span>
+                            <span class="checkbox-label">
+                                <strong>Authorization Confirmation</strong>
+                                I explicitly confirm that I am authorized to conduct security posture assessments on this target host system.
+                            </span>
+                        </label>
+                    </div>
+
+                    <div id="form-error" class="alert alert-danger hidden" role="alert"></div>
+
+                    <div class="form-actions">
+                        <button type="submit" id="btn-submit" class="btn btn-primary btn-lg btn-block" disabled>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                            <span id="btn-submit-text">Start Security Assessment</span>
+                        </button>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+
+        <!-- Live Audit Execution Terminal Overlay -->
+        <div id="audit-progress" class="panel progress-card hidden">
+            <div class="panel-header">
+                <h2 class="flex-align"><span class="spinner" aria-hidden="true"></span> Audit Scan in Progress&hellip;</h2>
+            </div>
+            <div class="progress-terminal mono" id="terminal-logs">
+                <div class="log-line">[+] Initializing VulnWatch audit engine...</div>
+                <div class="log-line">[+] Validating target scope and reachability...</div>
+            </div>
+        </div>
+    </div>
+
+    <aside class="scanner-side">
+        <div class="panel side-panel">
+            <div class="panel-header">
+                <h2>Before You Scan</h2>
+            </div>
+            <div class="panel-body side-notes">
+                <div class="side-note">
+                    <span class="side-note-icon" data-sev="critical" aria-hidden="true"></span>
+                    <p>Only scan targets you own or have explicit written authorization to test.</p>
+                </div>
+                <div class="side-note">
+                    <span class="side-note-icon" data-sev="info" aria-hidden="true"></span>
+                    <p>Audits are passive: header, cookie, method, and disclosure checks only &mdash; no exploitation.</p>
+                </div>
+                <div class="side-note">
+                    <span class="side-note-icon" data-sev="low" aria-hidden="true"></span>
+                    <p>Reports are generated automatically in JSON, HTML, and PDF once a scan completes.</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+</div>
+
+<!-- Active Scans Queue Status Modal -->
+<div id="queue-overlay" class="interceptor-overlay" role="dialog" aria-modal="true" aria-labelledby="queue-modal-title">
+    <div class="interceptor-modal queue-modal">
+        <div class="interceptor-header">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <h3 id="queue-modal-title">Active Audit Queue</h3>
+        </div>
+        <div class="interceptor-body">
+            <p>Active and pending background security posture assessments:</p>
+            <div id="queue-list-container" class="queue-list-container">
+                <div class="text-dim text-center py-3">Loading active scan status...</div>
+            </div>
+        </div>
+        <div class="interceptor-actions">
+            <button type="button" id="queue-close" class="btn btn-secondary">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- External Target Scope Authorization Interceptor Modal -->
+<div id="interceptor-overlay" class="interceptor-overlay" role="dialog" aria-modal="true" aria-labelledby="interceptor-title">
+    <div class="interceptor-modal">
+        <div class="interceptor-header">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <h3 id="interceptor-title">External Target Authorization</h3>
+        </div>
+        <div class="interceptor-body">
+            <p>The specified target hostname is an external public host:</p>
+            <div class="interceptor-target-box" id="interceptor-target-url">https://example.com</div>
+            <p>Executing security audits against external networks without explicit authorization may violate network policies and computer security laws.</p>
+            <p class="interceptor-question">Do you have explicit permission to audit this target?</p>
+        </div>
+        <div class="interceptor-actions">
+            <button type="button" id="interceptor-cancel" class="btn btn-secondary">Cancel Scan</button>
+            <button type="button" id="interceptor-confirm" class="btn btn-primary">I Have Explicit Permission</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/scanner.js') }}"></script>
+{% endblock %}
+

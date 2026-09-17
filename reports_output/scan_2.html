@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VulnWatch Security Audit - http://127.0.0.1:8081/</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --critical: #ef4444;
+            --high: #f97316;
+            --medium: #f59e0b;
+            --low: #3b82f6;
+            --info: #64748b;
+            --ok: #22c55e;
+            --warn: #f59e0b;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem;
+            line-height: 1.5;
+        }
+        .container { max-width: 1100px; margin: 0 auto; }
+        .header {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        .header h1 { margin: 0 0 0.5rem 0; font-size: 1.75rem; color: #38bdf8; }
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .summary-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .summary-card .count { font-size: 2rem; font-weight: bold; margin-top: 0.25rem; }
+        .sev-critical { color: var(--critical); border-top: 4px solid var(--critical); }
+        .sev-high     { color: var(--high); border-top: 4px solid var(--high); }
+        .sev-medium   { color: var(--medium); border-top: 4px solid var(--medium); }
+        .sev-low      { color: var(--low); border-top: 4px solid var(--low); }
+        .sev-info     { color: var(--info); border-top: 4px solid var(--info); }
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #e2e8f0;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            margin: 2rem 0 1rem 0;
+        }
+        /* ── Recon Section ── */
+        .recon-section {
+            background: rgba(99,102,241,0.06);
+            border: 1px solid rgba(99,102,241,0.25);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .recon-section .section-title { border-color: rgba(99,102,241,0.3); color: #a5b4fc; }
+        .recon-intro { color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1.25rem; }
+        .recon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .recon-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 7px;
+            padding: 1rem;
+        }
+        .recon-card-full { grid-column: 1 / -1; }
+        .recon-card-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--text-muted);
+            padding-bottom: 0.6rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .recon-count-badge {
+            background: rgba(99,102,241,0.2);
+            color: #a5b4fc;
+            padding: 1px 7px;
+            border-radius: 10px;
+            font-size: 0.72rem;
+            font-weight: 500;
+        }
+        .recon-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .recon-table-full { width: 100%; border-collapse: collapse; }
+        .recon-th {
+            text-align: left;
+            padding: 6px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(255,255,255,0.03);
+        }
+        .recon-td-label {
+            color: var(--text-muted);
+            padding: 5px 8px 5px 0;
+            width: 45%;
+            vertical-align: top;
+            font-size: 0.82rem;
+        }
+        .recon-table td { padding: 5px 4px; vertical-align: top; }
+        .recon-table-full td { padding: 6px 8px; border-bottom: 1px solid var(--border-color); font-size: 0.85rem; }
+        .recon-status-ok   { color: #4ade80; font-weight: 600; font-size: 0.8rem; }
+        .recon-status-fail { color: #f87171; font-weight: 600; font-size: 0.8rem; }
+        .recon-status-warn { color: #fb923c; font-weight: 600; font-size: 0.8rem; }
+        .recon-neutral     { color: var(--text-muted); font-size: 0.82rem; }
+        .recon-mono { font-family: monospace; font-size: 0.82rem; word-break: break-all; }
+        .recon-record-val { margin-top: 3px; }
+        .recon-warn-text { color: #fca5a5; }
+        .recon-sub-label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; font-weight: 600; }
+        .recon-chain-table { width: 100%; border-collapse: collapse; }
+        .recon-chain-table td { padding: 2px 4px; font-size: 0.78rem; }
+        .recon-chain-code {
+            color: #a5b4fc;
+            font-weight: 700;
+            font-family: monospace;
+            white-space: nowrap;
+            width: 40px;
+        }
+        .recon-chain-url { color: var(--text-muted); font-family: monospace; word-break: break-all; }
+        .recon-chip-container { display: flex; flex-wrap: wrap; gap: 6px; }
+        .recon-chip {
+            padding: 2px 8px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 0.78rem;
+            font-family: monospace;
+            color: var(--text-muted);
+        }
+        .recon-more { font-size: 0.78rem; color: var(--text-muted); padding: 2px 4px; }
+        .recon-warning-box {
+            background: rgba(239,68,68,0.07);
+            border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 7px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        .recon-warning-title { color: #fca5a5; font-weight: 700; font-size: 0.9rem; }
+        .recon-td-sub { padding-top: 4px; }
+        /* ── Finding Cards ── */
+        .finding-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .finding-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        .finding-title h3 { margin: 0; font-size: 1.1rem; }
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.78rem;
+            font-weight: bold;
+            color: #fff;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .badge-CRITICAL { background-color: var(--critical); }
+        .badge-HIGH     { background-color: var(--high); }
+        .badge-MEDIUM   { background-color: var(--medium); }
+        .badge-LOW      { background-color: var(--low); }
+        .badge-INFO     { background-color: var(--info); }
+        .field-label {
+            font-weight: bold;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            margin-top: 1rem;
+            margin-bottom: 0.25rem;
+        }
+        .evidence-box {
+            background-color: #090d16;
+            border: 1px solid var(--border-color);
+            padding: 0.75rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.82rem;
+            color: #a5f3fc;
+            overflow-x: auto;
+            word-break: break-all;
+        }
+        code { font-family: monospace; font-size: 0.88em; }
+        @media (max-width: 640px) {
+            .summary-grid { grid-template-columns: repeat(3, 1fr); }
+            .recon-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>VulnWatch Executive Security Posture Audit</h1>
+            <div>Target: <strong>http://127.0.0.1:8081/</strong></div>
+            <div class="meta-grid">
+                <div>Scan ID: #2</div>
+                <div>Status: COMPLETED</div>
+                <div>Started: 2026-09-17T12:09:41.088283</div>
+                <div>Completed: 2026-09-17T12:09:48.032029</div>
+            </div>
+        </div>
+
+        <h2 class="section-title">Executive Severity Summary</h2>
+        <div class="summary-grid">
+            <div class="summary-card sev-critical">
+                <div>CRITICAL</div>
+                <div class="count">0</div>
+            </div>
+            <div class="summary-card sev-high">
+                <div>HIGH</div>
+                <div class="count">2</div>
+            </div>
+            <div class="summary-card sev-medium">
+                <div>MEDIUM</div>
+                <div class="count">2</div>
+            </div>
+            <div class="summary-card sev-low">
+                <div>LOW</div>
+                <div class="count">2</div>
+            </div>
+            <div class="summary-card sev-info">
+                <div>INFO</div>
+                <div class="count">2</div>
+            </div>
+        </div>
+
+        
+    <section class="recon-section" id="recon-section">
+        <h2 class="section-title">Perimeter Reconnaissance &amp; Asset Intelligence</h2>
+        <p class="recon-intro">Passive, non-intrusive attack surface mapping gathered during the scan.
+        Data sources: Certificate Transparency logs (crt.sh), DNS resolver, HTTP response headers.</p>
+
+        <div class="recon-grid">
+
+            <!-- TLS & Transport Security -->
+            <div class="recon-card">
+                <div class="recon-card-title">TLS &amp; Transport Security</div>
+                <table class="recon-table"><tbody>
+        <tr><td class="recon-td-label">HTTPS / TLS Enabled</td>
+            <td><span class="recon-status-fail">NOT USED</span></td></tr>
+        <tr><td class="recon-td-label">HTTP → HTTPS Redirect</td>
+            <td><span class="recon-status-fail">NOT CONFIGURED</span></td></tr>
+        <tr><td class="recon-td-label">Redirect Hops</td>
+            <td><code>0</code></td></tr>
+        <tr><td class="recon-td-label">Final Destination</td>
+            <td><code class="recon-mono">—</code></td></tr>
+    </tbody></table>
+            </div>
+
+            <!-- DNS Email Security -->
+            <div class="recon-card">
+                <div class="recon-card-title">DNS Email Authentication Posture</div>
+                <table class="recon-table"><tbody>
+        <tr><td class="recon-td-label">SPF Record</td>
+            <td><span class="recon-status-fail">MISSING</span>
+            
+            </td></tr>
+        <tr><td class="recon-td-label">DMARC Policy</td>
+            <td><span class="recon-status-fail">MISSING</span>
+            
+            </td></tr>
+        <tr><td class="recon-td-label">DKIM Selectors Found</td>
+            <td><span class="recon-neutral">None detected</span></td></tr>
+    </tbody></table>
+            </div>
+
+            <!-- Technology Stack -->
+            <div class="recon-card">
+                <div class="recon-card-title">Technology Stack Fingerprints</div>
+                <table class="recon-table"><tbody><tr><td class="recon-td-label">Unknown Server</td><td><code class="recon-mono">TestServer/1.0</code></td></tr></tbody></table>
+            </div>
+
+            <!-- Subdomain Inventory -->
+            <div class="recon-card recon-card-full">
+                <div class="recon-card-title">Certificate Transparency Subdomain Inventory
+                    <span class="recon-count-badge">0 subdomains</span>
+                </div>
+                <div class="recon-chip-container"><span class="recon-neutral">No CT log subdomains discovered.</span></div>
+            </div>
+
+        </div>
+
+        
+
+    </section>
+    
+
+        <h2 class="section-title">Detailed Assessment Findings (8)</h2>
+    
+        <div class="finding-card">
+            <div class="finding-title">
+                <h3>Missing Content Security Policy (CSP)</h3>
+                <span class="badge badge-HIGH">HIGH</span>
+            </div>
+            <div><strong>Category:</strong> Security Headers &nbsp;|&nbsp; <strong>Affected URL:</strong> <code>http://127.0.0.1:8081/</code></div>
+
+            <div class="field-label">Description</div>
+            <div>Content Security Policy header is not present. CSP prevents Cross-Site Scripting (XSS) and data injection attacks.</div>
+
+            <div class="field-label">Evidence</div>
+            <div class="evidence-box">{
+  &quot;header&quot;: &quot;Content-Security-Policy&quot;,
+  &quot;status&quot;: &quot;Missing&quot;,
+  &quot;owasp_link&quot;: &quot;https://cheatsheetseries.owasp.org/index.html&quot;
+}</div>
+
+            <div class="field-label">Remediation Action</div>
+            <div>Implement a strong Content-Security-Policy header restricting script execution and resource loading.</div>
+        </div>
+        
+        <div class="finding-card">
+            <div class="finding-title">
+                <h3>Missing X-Frame-Options Header</h3>
+                <span class="badge badge-MEDIUM">MEDIUM</span>
+            </div>
+            <div><strong>Category:</strong> Security Headers &nbsp;|&nbsp; <strong>Affected URL:</strong> <code>http://127.0.0.1:8081/</code></div>
+
+            <div class="field-label">Description</div>
+            <div>The X-Frame-Options header is absent, rendering the application potentially susceptible to Clickjacking framing attacks.</div>
+
+            <div class="field-label">Evidence</div>
+            <div class="evidence-box">{
+  &quot;header&quot;: &quot;X-Frame-Options&quot;,
+  &quot;status&quot;: &quot;Missing&quot;,
+  &quot;owasp_link&quot;: &quot;https://cheatsheetseries.owasp.org/index.html&quot;
+}</div>
+
+            <div class="field-label">Remediation Action</div>
+            <div>Configure &#x27;X-Frame-Options: DENY&#x27; or &#x27;X-Frame-Options: SAMEORIGIN&#x27; on HTTP responses.</div>
+        </div>
+        
+        <div class="finding-card">
+            <div class="finding-title">
+                <h3>Missing or Invalid X-Content-Type-Options Header</h3>
+                <span class="badge badge-MEDIUM">MEDIUM</span>
+            </div>
+            <div><strong>Category:</strong> Security Headers &nbsp;|&nbsp; <strong>Affected URL:</strong> <code>http://127.0.0.1:8081/</code></div>
+
+            <div class="field-label">Description</div>
+            <div>Missing &#x27;X-Content-Type-Options: nosniff&#x27; header allows browsers to MIME-sniff response content types, potentially executing untrusted assets.</div>
+
+            <div class="field-label">Evidence</div>
+            <div class="evidence-box">{
+  &quot;header&quot;: &quot;X-Content-Type-Options&quot;,
+  &quot;value&quot;: &quot;Missing&quot;,
+  &quot;owasp_link&quot;: &quot;https://cheatsheetseries.owasp.org/index.html&quot;
+}</div>
+
+            <div class="field-label">Remediation Action</div>
+            <div>Set &#x27;X-Content-Type-Options: nosniff&#x27; header across all responses.</div>
+        </div>
+        
+        <div class="finding-card">
+            <div class="finding-title">
+                <h3>Missing Referrer-Policy Header</h3>
+                <span class="badge badge-LOW">LOW</span>
+            </div>
+            <div><strong>Category:</strong> Security Headers &nbsp;|&nbsp; <strong>Affected URL:</strong> <code>http://127.0.0.1:8081/</code></div>
+
+            <div class="field-label">Description</div>
+            <div>No Referrer-Policy header specified. Browsers may send full referrer URLs containing sensitive path parameters.</div>
+
+            <div class="field-label">Evidence</div>
+            <div class="evidence-box">{
+  &quot;header&quot;: &quot;Referrer-Policy&quot;,
+  &quot;status&quot;: &quot;Missing&quot;,
+  &quot;owasp_link&quot;: &quot;https://cheatsheetseries.owasp.org/index.html&quot;
+}</div>
+
+            <div class="field-label">Remediation Action</div>
+            <div>Set &#x27;Referrer-Policy: strict-origin-when-cross-origin&#x27; or &#x27;no-referrer&#x27;.</div>
+        </div>
+        
+        <div class="finding-card">
+            <div class="finding-title">
+                <h3>Missing Permissions-Policy Header</h3>
+                <span class="badge badge-INFO">INFO</span>
+            </div>
+            <div><strong>Category:</strong> Security Headers &nbsp;|&nbsp; <strong>Affected URL:</strong> <code>http://127.0.0.1:8081/</code></div>
+
+            <div class="field-label">Description</div>
+            <div>Permissions-Policy header is missing. Controlling browser features (geolocation, camera, microphone) is recommended.</div>
+
+            <div class="field-label">Evidence</div>
+            <div class="evidence-box">{
+  &quot;header&quot;: &quot;Permissions-Policy&quot;,
+  &quot;status&quot;: &quot;Missing&quot;,
+  &quot;owasp_link&quot;: &quot;https://cheatsheetseries.owasp.org/index.html&quot;
+}</div>
+
+            <div class="field-label">Remediation Action</div>
+            <div>Define a Permissions-Policy header to restrict access to hardware APIs.</div>
+        </div>
+        
+        <div class="finding-card">
+            <div class="finding-title">
+                <h3>Server Software Version Disclosure</h3>
+                <span class="badge badge-INFO">INFO</span>
+            </div>
+            <div><strong>Category:</strong> Information Disclosure &nbsp;|&nbsp; <strong>Affected URL:</strong> <code>http://127.0.0.1:8081/</code></div>
+
+            <div class="field-label">Description</div>
+            <div>The Server header discloses precise software version numbers: &#x27;TestServer/1.0&#x27;.</div>
+
+            <div class="field-label">Evidence</div>
+            <div class="evidence-box">{
+  &quot;header&quot;: &quot;Server&quot;,
+  &quot;value&quot;: &quot;TestServer/1.0&quot;,
+  &quot;owasp_link&quot;: &quot;https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html&quot;
+}</div>
+
+            <div class="field-label">Remediation Action</div>
+            <div>Configure web server to suppress banner version details (e.g., ServerTokens Prod in Apache, server_tokens off in Nginx).</div>
+        </div>
+        
+        <div class="finding-card">
+            <div class="finding-title">
+                <h3>Server Version Disclosed in HTTP Response Header</h3>
+                <span class="badge badge-LOW">LOW</span>
+            </div>
+            <div><strong>Category:</strong> Information Disclosure &nbsp;|&nbsp; <strong>Affected URL:</strong> <code>http://127.0.0.1:8081/</code></div>
+
+            <div class="field-label">Description</div>
+            <div>The server response includes a &#x27;Server&#x27; header that reveals specific version information: &#x27;TestServer/1.0&#x27;. Attackers can use this to identify vulnerable software versions and target known CVEs.</div>
+
+            <div class="field-label">Evidence</div>
+            <div class="evidence-box">{
+  &quot;header&quot;: &quot;Server&quot;,
+  &quot;value&quot;: &quot;TestServer/1.0&quot;,
+  &quot;owasp_link&quot;: &quot;https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html&quot;
+}</div>
+
+            <div class="field-label">Remediation Action</div>
+            <div>Configure the web server to suppress or genericize the Server header. Nginx: &#x27;server_tokens off;&#x27; | Apache: &#x27;ServerTokens Prod; ServerSignature Off&#x27; | IIS: Remove via URL Rewrite or custom headers module.</div>
+        </div>
+        
+        <div class="finding-card">
+            <div class="finding-title">
+                <h3>Target Does Not Use HTTPS / TLS Encryption</h3>
+                <span class="badge badge-HIGH">HIGH</span>
+            </div>
+            <div><strong>Category:</strong> TLS / Transport Security &nbsp;|&nbsp; <strong>Affected URL:</strong> <code>http://127.0.0.1:8081/</code></div>
+
+            <div class="field-label">Description</div>
+            <div>The target is served over plain HTTP with no TLS/SSL encryption. All data transmitted between clients and the server — including credentials, session tokens, and sensitive data — is exposed to passive eavesdropping and active man-in-the-middle (MITM) attacks.</div>
+
+            <div class="field-label">Evidence</div>
+            <div class="evidence-box">{
+  &quot;scheme&quot;: &quot;http&quot;,
+  &quot;tls_present&quot;: false,
+  &quot;owasp_link&quot;: &quot;https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Security_Cheat_Sheet.html&quot;
+}</div>
+
+            <div class="field-label">Remediation Action</div>
+            <div>Obtain a TLS certificate (e.g., free via Let&#x27;s Encrypt) and configure the server to serve exclusively over HTTPS. Redirect all HTTP traffic to HTTPS using a 301 permanent redirect.</div>
+        </div>
+        
+    </div>
+</body>
+</html>
+    

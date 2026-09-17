@@ -1,0 +1,11 @@
+cat << 'EOF' > .gitignore
+venv/
+__pycache__/
+*.pyc
+.env
+*.db
+*.sqlite
+*.sqlite3
+instance/
+.pytest_cache/
+EOF
