@@ -9,7 +9,12 @@ engine = None
 def init_db(database_uri: str):
     """Initialize SQLite database engine, session, and create all registered tables."""
     global db_session, engine
-    engine = create_engine(database_uri, echo=False)
+    engine = create_engine(
+    database_uri,
+    echo=False,
+    pool_pre_ping=True,
+    pool_recycle=300,
+)
     db_session = scoped_session(
         sessionmaker(autocommit=False, autoflush=False, bind=engine)
     )
