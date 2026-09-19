@@ -1,6 +1,6 @@
 import os
 import uuid
-from flask import Blueprint, current_app, jsonify, redirect, render_template, request, session, url_for
+from flask import Blueprint, current_app, jsonify, make_response, redirect, render_template, request, session, url_for
 from database.db import get_session
 from database.models import Scan, ScanStatus
 from reports.html_report import generate_html_report
@@ -9,36 +9,79 @@ from reports.pdf_report import generate_pdf_report
 from scanner.engine import ScanEngine, cleanup_stale_scans
 from scanner.target import TargetValidationError, validate_target_url
 from services.notifier import dispatch_webhook
-from services.auth import require_api_key
+from services.auth import require_api_key, require_api_key_or_browser
 from routes.settings import load_settings
 
 from utils.privacy import check_scan_ownership
 
 scanner_bp = Blueprint("scanner", __name__)
 
+# Lifetime of the guest device ID cookie: 1 year
+_GUEST_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
+
+
+def _resolve_guest_id():
+    """Return (guest_device_id, is_new) from the persistent cookie or Flask session.
+
+    Priority:
+    1. ``guest_device_id`` HTTP cookie  (1-year; survives session expiry)
+    2. ``guest_id`` / ``guest_session_id`` Flask session key  (legacy fallback)
+    3. Generate a new UUID, store it in the session so the caller can set the
+       cookie on the response.
+
+    Returns:
+        tuple: (guest_id: str, is_new: bool)
+    """
+    # 1. Persistent cookie (most authoritative)
+    cookie_id = request.cookies.get("guest_device_id", "").strip()
+    if cookie_id:
+        # Sync into session for legacy code paths that read session['guest_id']
+        session.setdefault("guest_id", cookie_id)
+        return cookie_id, False
+
+    # 2. Existing session key (browser already has a session cookie)
+    session_id = session.get("guest_id") or session.get("guest_session_id")
+    if session_id:
+        return session_id, True  # is_new=True so caller sets persistent cookie
+
+    # 3. Brand new guest — generate and store in session; caller must set cookie
+    new_id = str(uuid.uuid4())
+    session["guest_id"] = new_id
+    return new_id, True
+
 
 @scanner_bp.route("/scanner", methods=["GET"])
 def scanner_form():
-    """Render the scan target configuration form."""
+    """Render the scan target configuration form and establish guest device cookie."""
     db = get_session()
     cleanup_stale_scans(db, max_age_seconds=120)
     user_id = session.get("user_id")
-    guest_id = session.get("guest_id") or session.get("guest_session_id")
 
     query = db.query(Scan).filter(Scan.status.in_([ScanStatus.RUNNING, ScanStatus.PENDING]))
     if user_id:
         query = query.filter(Scan.user_id == user_id)
-    elif guest_id:
-        query = query.filter(Scan.guest_session_id == guest_id)
     else:
-        query = query.filter(False)
+        guest_id, is_new = _resolve_guest_id()
+        query = query.filter(Scan.guest_session_id == guest_id)
 
     active_count = query.count()
-    return render_template("scanner.html", active_scan_count=active_count)
+    response = make_response(render_template("scanner.html", active_scan_count=active_count))
+
+    # Establish / refresh the persistent guest device cookie on page load
+    if not user_id:
+        response.set_cookie(
+            "guest_device_id",
+            guest_id,
+            max_age=_GUEST_COOKIE_MAX_AGE,
+            httponly=True,
+            samesite="Lax",
+        )
+
+    return response
 
 
 @scanner_bp.route("/queue", methods=["GET"])
-@require_api_key
+@require_api_key_or_browser
 def get_active_queue():
     """Retrieve list of running or pending scans for status polling."""
     db = get_session()
@@ -60,7 +103,7 @@ def get_active_queue():
 
 
 @scanner_bp.route("/scan", methods=["POST"])
-@require_api_key
+@require_api_key_or_browser
 def trigger_scan():
     """Trigger a new WebGuard security posture audit for a single target URL.
 
@@ -103,13 +146,11 @@ def trigger_scan():
     # --- Guest quota enforcement & ownership tagging ---
     db = get_session()
     user_id = session.get("user_id")
+    guest_cookie_is_new = False
     if user_id:
         guest_session_id = None  # authenticated user – no guest tracking needed
     else:
-        guest_session_id = session.get("guest_id")
-        if not guest_session_id:
-            guest_session_id = str(uuid.uuid4())
-            session["guest_id"] = guest_session_id
+        guest_session_id, guest_cookie_is_new = _resolve_guest_id()
         guest_limit = current_app.config.get("GUEST_SCAN_LIMIT", 3)
         guest_count = db.query(Scan).filter_by(guest_session_id=guest_session_id).count()
         if guest_count >= guest_limit:
@@ -194,8 +235,20 @@ def trigger_scan():
     # Build diff vs previous scan of same target URL
     diff_summary = _compute_diff_summary(scan)
 
+    def _set_guest_cookie(resp):
+        """Attach the persistent guest_device_id cookie to a response if needed."""
+        if not user_id and guest_session_id and guest_cookie_is_new:
+            resp.set_cookie(
+                "guest_device_id",
+                guest_session_id,
+                max_age=_GUEST_COOKIE_MAX_AGE,
+                httponly=True,
+                samesite="Lax",
+            )
+        return resp
+
     if request.is_json:
-        return (
+        resp = make_response(
             jsonify(
                 {
                     "message": "Scan completed successfully",
@@ -211,13 +264,14 @@ def trigger_scan():
             ),
             201,
         )
+        return _set_guest_cookie(resp)
 
-    return redirect(url_for("reports.view_report", scan_id=scan.id))
+    return _set_guest_cookie(redirect(url_for("reports.view_report", scan_id=scan.id)))
 
 
 @scanner_bp.route("/scan/batch", methods=["POST"])
 @scanner_bp.route("/scanner/batch", methods=["POST"])
-@require_api_key
+@require_api_key_or_browser
 def trigger_batch_scan():
     """Trigger a batch of security posture audits across multiple target URLs.
 
@@ -268,13 +322,11 @@ def trigger_batch_scan():
     # --- Guest quota enforcement & ownership tagging (batch) ---
     db_sess = get_session()
     user_id = session.get("user_id")
+    guest_cookie_is_new_batch = False
     if user_id:
         guest_session_id = None
     else:
-        guest_session_id = session.get("guest_id")
-        if not guest_session_id:
-            guest_session_id = str(uuid.uuid4())
-            session["guest_id"] = guest_session_id
+        guest_session_id, guest_cookie_is_new_batch = _resolve_guest_id()
         guest_limit = current_app.config.get("GUEST_SCAN_LIMIT", 3)
         guest_count = db_sess.query(Scan).filter_by(guest_session_id=guest_session_id).count()
         remaining = guest_limit - guest_count
@@ -294,6 +346,7 @@ def trigger_batch_scan():
             )
         # Clip the batch to remaining quota
         target_lines = target_lines[:remaining]
+
 
     engine = ScanEngine(
         timeout=current_app.config.get("SCAN_TIMEOUT", 10),
@@ -379,11 +432,22 @@ def trigger_batch_scan():
             current_app.logger.exception("Batch scan failed id=%s", error_id)
             errors.append({"target_url": raw_url, "error": "Scan execution failed.", "error_id": error_id})
 
+    def _set_batch_guest_cookie(resp):
+        if not user_id and guest_session_id and guest_cookie_is_new_batch:
+            resp.set_cookie(
+                "guest_device_id",
+                guest_session_id,
+                max_age=_GUEST_COOKIE_MAX_AGE,
+                httponly=True,
+                samesite="Lax",
+            )
+        return resp
+
     if not request.is_json:
         ids_str = ",".join(str(s["scan_id"]) for s in batch_results if "scan_id" in s)
-        return redirect(url_for("scanner.view_batch_results", ids=ids_str))
+        return _set_batch_guest_cookie(redirect(url_for("scanner.view_batch_results", ids=ids_str)))
 
-    return (
+    resp = make_response(
         jsonify(
             {
                 "message": f"Batch assessment complete. Executed {len(batch_results)} scan(s) successfully.",
@@ -393,11 +457,12 @@ def trigger_batch_scan():
         ),
         201,
     )
+    return _set_batch_guest_cookie(resp)
 
 
 @scanner_bp.route("/batch/results", methods=["GET"])
 @scanner_bp.route("/scanner/batch/results", methods=["GET"])
-@require_api_key
+@require_api_key_or_browser
 def view_batch_results():
     """Render executive summary for a completed batch audit."""
     ids_param = request.args.get("ids", "").strip()

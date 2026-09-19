@@ -42,16 +42,18 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function authenticatedHeaders() {
-        const apiKey = apiKeyInput ? apiKeyInput.value.trim() : '';
-        if (!apiKey) {
-            throw new Error('An API key is required to start a scan.');
-        }
-        sessionStorage.setItem('webguard_api_key', apiKey);
-        return {
+        const apiKey = (apiKeyInput ? apiKeyInput.value.trim() : '') ||
+                       sessionStorage.getItem('webguard_api_key') || '';
+        const headers = {
             'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-API-Key': apiKey
+            'Accept': 'application/json'
         };
+        if (apiKey) {
+            // Persist and include key when available; not required for browser sessions
+            sessionStorage.setItem('webguard_api_key', apiKey);
+            headers['X-API-Key'] = apiKey;
+        }
+        return headers;
     }
 
     // Enable the submit button only once authorization is confirmed
@@ -259,13 +261,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function startScan(targetUrl) {
         if (isSubmitting) return;
-        let headers;
-        try {
-            headers = authenticatedHeaders();
-        } catch (err) {
-            showError(err.message);
-            return;
-        }
+        const headers = authenticatedHeaders();
         isSubmitting = true;
 
         submitBtn.disabled = true;
@@ -338,13 +334,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function startBatchScan(targets) {
         if (isSubmitting) return;
-        let headers;
-        try {
-            headers = authenticatedHeaders();
-        } catch (err) {
-            showError(err.message);
-            return;
-        }
+        const headers = authenticatedHeaders();
         isSubmitting = true;
 
         submitBtn.disabled = true;
