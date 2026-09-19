@@ -93,6 +93,9 @@
                         value="{{ settings.api_key or 'No API key generated' }}"
                         readonly
                         style="flex: 1; background: var(--bg-card); color: var(--brand);">
+                    <button type="button" id="btn-copy-key" class="btn btn-secondary btn-sm">
+                        Copy
+                    </button>
                     <button type="button" id="btn-generate-key" class="btn btn-secondary btn-sm">
                         Regenerate Key
                     </button>
@@ -117,6 +120,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('settings-form');
     const genKeyBtn = document.getElementById('btn-generate-key');
     const apiKeyInput = document.getElementById('api_key_display');
+    const copyKeyBtn = document.getElementById('btn-copy-key'); // 1. Added selector
 
     if (form) {
         form.addEventListener('submit', function (e) {
@@ -187,6 +191,38 @@ document.addEventListener('DOMContentLoaded', function () {
                 .finally(function () {
                     genKeyBtn.disabled = false;
                 });
+        });
+    }
+
+    // 2. Added Copy handler
+    if (copyKeyBtn && apiKeyInput) {
+        copyKeyBtn.addEventListener('click', function () {
+            const keyVal = apiKeyInput.value.trim();
+            if (!keyVal || keyVal === 'undefined' || keyVal === 'No API key generated') {
+                if (window.showToast) {
+                    window.showToast('Please generate an API key first.', 'warning');
+                } else {
+                    alert('Please generate an API key first.');
+                }
+                return;
+            }
+
+            navigator.clipboard.writeText(keyVal).then(function () {
+                const originalText = copyKeyBtn.textContent;
+                copyKeyBtn.textContent = 'Copied!';
+                if (window.showToast) {
+                    window.showToast('API key copied to clipboard!', 'success');
+                }
+                setTimeout(function () {
+                    copyKeyBtn.textContent = originalText;
+                }, 2000);
+            }).catch(function () {
+                apiKeyInput.select();
+                document.execCommand('copy');
+                if (window.showToast) {
+                    window.showToast('API key copied to clipboard!', 'success');
+                }
+            });
         });
     }
 });

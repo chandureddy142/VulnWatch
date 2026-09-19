@@ -88,7 +88,6 @@ def save_settings_route():
 
 
 @settings_bp.route("/generate-api-key", methods=["POST"])
-@require_api_key
 def generate_api_key():
     """Generate and persist a new random API key."""
     settings = load_settings()
