@@ -102,6 +102,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const triageNotes = notesInput ? notesInput.value : '';
 
             const originalBtnText = this.textContent;
+            const apiKey = sessionStorage.getItem('webguard_api_key') || '';
             this.disabled = true;
             this.textContent = 'Saving...';
 
@@ -109,7 +110,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    ...(apiKey ? { 'X-API-Key': apiKey } : {})
                 },
                 body: JSON.stringify({
                     triage_status: triageStatus,
@@ -330,6 +332,5 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 });
-
 
 

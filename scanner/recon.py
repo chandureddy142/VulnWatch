@@ -142,9 +142,15 @@ def _enumerate_ct_subdomains(host: str, result: ReconResult, timeout: int) -> No
 
     try:
         api_url = f"https://crt.sh/?q=%25.{host}&output=json"
-        resp = requests.get(api_url, timeout=(5, timeout), headers={
-            "User-Agent": "VulnWatch-Auditor/1.0 (+https://yourdomain.com/security; contact: abuse@yourdomain.com)"
-        })
+        resp = requests.get(
+            api_url,
+            timeout=(5, timeout),
+            headers={
+                "User-Agent": "VulnWatch-Auditor/1.0 (+https://yourdomain.com/security; contact: abuse@yourdomain.com)"
+            },
+            allow_redirects=False,
+            verify=True,
+        )
         if resp.status_code == 200:
             entries = resp.json()
             seen = set()
@@ -458,9 +464,11 @@ def _audit_tls_and_redirects(target_url: str, result: ReconResult, timeout: int)
         session.headers["User-Agent"] = "VulnWatch-Auditor/1.0 (+https://yourdomain.com/security; contact: abuse@yourdomain.com)"
         resp = session.get(
             target_url,
-            allow_redirects=True,
+            # Do not let a target redirect reconnaissance probes to an
+            # unvalidated destination.
+            allow_redirects=False,
             timeout=(5, timeout),
-            verify=False,
+            verify=True,
         )
         chain = []
         for r in resp.history:
@@ -563,9 +571,9 @@ def _audit_tls_and_redirects(target_url: str, result: ReconResult, timeout: int)
         try:
             http_resp = requests.get(
                 http_url,
-                allow_redirects=True,
+                allow_redirects=False,
                 timeout=(4, 6),
-                verify=False,
+                verify=True,
             )
             if http_resp.url.startswith("https://"):
                 result.tls_info["http_to_https_redirect"] = True

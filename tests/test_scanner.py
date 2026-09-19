@@ -22,9 +22,7 @@ def db_session():
 
 def test_target_validation():
     # Test valid targets
-    assert validate_target_url("http://127.0.0.1:8080") == "http://127.0.0.1:8080/"
-    assert validate_target_url("https://example.com") == "https://example.com/"
-    assert validate_target_url("example.com") == "http://example.com/"
+    assert validate_target_url("https://8.8.8.8") == "https://8.8.8.8/"
 
     # Test invalid schemes
     with pytest.raises(TargetValidationError):
@@ -84,14 +82,14 @@ def test_http_methods_auditing():
 
 
 def test_scan_engine_orchestration(db_session):
-    engine = ScanEngine(allow_localhost=True)
+    engine = ScanEngine(allow_localhost=False)
 
     with patch.object(engine.http_client, "get") as mock_get, patch.object(
         engine.http_client, "options"
     ) as mock_options:
 
         mock_get.return_value = HTTPResponseData(
-            url="http://127.0.0.1:8080/",
+                url="https://8.8.8.8/",
             status_code=200,
             headers={
                 "Server": "Werkzeug/3.0.3",
@@ -101,12 +99,12 @@ def test_scan_engine_orchestration(db_session):
         )
 
         mock_options.return_value = HTTPResponseData(
-            url="http://127.0.0.1:8080/",
+                url="https://8.8.8.8/",
             status_code=200,
             headers={"Allow": "GET, HEAD, POST, OPTIONS"},
         )
 
-        scan = engine.execute_scan("http://127.0.0.1:8080")
+        scan = engine.execute_scan("https://8.8.8.8")
 
         assert scan.status == ScanStatus.COMPLETED
         assert scan.status_code == 200
@@ -116,7 +114,7 @@ def test_scan_engine_orchestration(db_session):
 
 def test_scan_engine_connection_failure(db_session):
     """Test scan execution when target connection fails (get_resp.error is set)."""
-    engine = ScanEngine(allow_localhost=True)
+    engine = ScanEngine(allow_localhost=False)
 
     with patch.object(engine.http_client, "get") as mock_get:
         mock_get.return_value = HTTPResponseData(
@@ -125,7 +123,8 @@ def test_scan_engine_connection_failure(db_session):
             error="Connection refused by remote host",
         )
 
-        scan = engine.execute_scan("https://safepass.chandureddy.in")
+        with patch("scanner.engine.validate_target_url", return_value="https://safepass.chandureddy.in/"):
+            scan = engine.execute_scan("https://safepass.chandureddy.in")
 
         assert scan.status == ScanStatus.FAILED
         assert len(scan.findings) == 1
@@ -166,4 +165,3 @@ def test_cleanup_stale_scans(db_session):
     db_session.refresh(stale_scan)
     assert stale_scan.status == ScanStatus.FAILED
     assert stale_scan.completed_at is not None
-

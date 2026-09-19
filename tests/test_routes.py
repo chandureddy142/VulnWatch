@@ -5,6 +5,9 @@ from database.models import Scan, ScanStatus, SeverityLevel
 from scanner.http import HTTPResponseData
 
 
+API_HEADERS = {"X-API-Key": "testing-api-key"}
+
+
 @pytest.fixture
 def app_client():
     app = create_app("testing")
@@ -13,11 +16,11 @@ def app_client():
 
 
 def test_dashboard_route(app_client):
-    response = app_client.get("/")
+    response = app_client.get("/", headers=API_HEADERS)
     assert response.status_code == 200
     assert b"Executive Audit Dashboard" in response.data
 
-    json_response = app_client.get("/?format=json")
+    json_response = app_client.get("/?format=json", headers=API_HEADERS)
     assert json_response.status_code == 200
     data = json_response.get_json()
     assert "total_scans" in data
@@ -28,7 +31,7 @@ def test_dashboard_route(app_client):
 
 def test_settings_routes(app_client):
     # GET settings page
-    res_get = app_client.get("/settings/")
+    res_get = app_client.get("/settings/", headers=API_HEADERS)
     assert res_get.status_code == 200
     assert b"Platform Settings &amp; Integrations" in res_get.data or b"Platform Settings & Integrations" in res_get.data
 
@@ -40,6 +43,7 @@ def test_settings_routes(app_client):
             "webhook_url": "https://hooks.slack.com/services/test/test/test",
             "default_modules": ["headers", "cookies"],
         },
+        headers=API_HEADERS,
     )
     assert res_post.status_code == 200
     data = res_post.get_json()
@@ -47,7 +51,7 @@ def test_settings_routes(app_client):
     assert data["settings"]["webhook_url"] == "https://hooks.slack.com/services/test/test/test"
 
     # Generate API key
-    res_key = app_client.post("/settings/generate-api-key")
+    res_key = app_client.post("/settings/generate-api-key", headers=API_HEADERS)
     assert res_key.status_code == 200
     key_data = res_key.get_json()
     assert "api_key" in key_data
@@ -58,7 +62,8 @@ def test_scan_trigger_unauthorized(app_client):
     # Missing authorization flag should fail
     res = app_client.post(
         "/scan",
-        json={"target_url": "http://127.0.0.1:8080", "authorized": False},
+        json={"target_url": "https://8.8.8.8", "authorized": False},
+        headers=API_HEADERS,
     )
     assert res.status_code == 400
     assert "Authorization Requirement Unconfirmed" in res.get_json()["error"]
@@ -70,20 +75,21 @@ def test_scan_trigger_authorized_and_triage(app_client):
     ) as mock_options:
 
         mock_get.return_value = HTTPResponseData(
-            url="http://127.0.0.1:8080/",
+            url="https://8.8.8.8/",
             status_code=200,
             headers={"Server": "TestServer/1.0"},
             raw_set_cookie_headers=[],
         )
         mock_options.return_value = HTTPResponseData(
-            url="http://127.0.0.1:8080/",
+            url="https://8.8.8.8/",
             status_code=200,
             headers={"Allow": "GET, HEAD, OPTIONS"},
         )
 
         res = app_client.post(
             "/scan",
-            json={"target_url": "http://127.0.0.1:8080", "authorized": True},
+            json={"target_url": "https://8.8.8.8", "authorized": True},
+            headers=API_HEADERS,
         )
 
         assert res.status_code == 201
@@ -94,12 +100,12 @@ def test_scan_trigger_authorized_and_triage(app_client):
         scan_id = data["scan"]["id"]
 
         # Test API Status Polling Endpoint
-        api_res = app_client.get(f"/api/scan/{scan_id}")
+        api_res = app_client.get(f"/api/scan/{scan_id}", headers=API_HEADERS)
         assert api_res.status_code == 200
         assert api_res.get_json()["id"] == scan_id
 
         # Test Findings API Endpoint
-        findings_res = app_client.get(f"/api/scan/{scan_id}/findings")
+        findings_res = app_client.get(f"/api/scan/{scan_id}/findings", headers=API_HEADERS)
         assert findings_res.status_code == 200
         findings = findings_res.get_json()
         assert len(findings) > 0
@@ -112,6 +118,7 @@ def test_scan_trigger_authorized_and_triage(app_client):
                 "triage_status": "false_positive",
                 "triage_notes": "Tested in development environment.",
             },
+            headers=API_HEADERS,
         )
         assert triage_res.status_code == 200
         triage_data = triage_res.get_json()
@@ -119,33 +126,34 @@ def test_scan_trigger_authorized_and_triage(app_client):
         assert triage_data["finding"]["triage_notes"] == "Tested in development environment."
 
         # Test Report Download Endpoints
-        json_rep = app_client.get(f"/reports/{scan_id}/json")
+        json_rep = app_client.get(f"/reports/{scan_id}/json", headers=API_HEADERS)
         assert json_rep.status_code == 200
         assert json_rep.mimetype == "application/json"
 
-        pdf_rep = app_client.get(f"/reports/{scan_id}/pdf")
+        pdf_rep = app_client.get(f"/reports/{scan_id}/pdf", headers=API_HEADERS)
         assert pdf_rep.status_code == 200
         assert pdf_rep.mimetype == "application/pdf"
 
-        html_rep = app_client.get(f"/reports/{scan_id}/html")
+        html_rep = app_client.get(f"/reports/{scan_id}/html", headers=API_HEADERS)
         assert html_rep.status_code == 200
         assert html_rep.mimetype == "text/html"
 
         # Test Scan Deletion
-        del_res = app_client.delete(f"/api/scan/{scan_id}")
+        del_res = app_client.delete(f"/api/scan/{scan_id}", headers=API_HEADERS)
         assert del_res.status_code == 200
 
 
 def test_queue_and_batch_scan_routes(app_client):
     # Test /queue endpoint
-    queue_res = app_client.get("/queue")
+    queue_res = app_client.get("/queue", headers=API_HEADERS)
     assert queue_res.status_code == 200
     assert isinstance(queue_res.get_json(), list)
 
     # Test /scan/batch unauthorized
     batch_unauth = app_client.post(
         "/scan/batch",
-        json={"targets": ["http://127.0.0.1:8080"], "authorized": False},
+        json={"targets": ["https://8.8.8.8"], "authorized": False},
+        headers=API_HEADERS,
     )
     assert batch_unauth.status_code == 400
 
@@ -154,13 +162,13 @@ def test_queue_and_batch_scan_routes(app_client):
         "scanner.engine.HTTPClient.options"
     ) as mock_options:
         mock_get.return_value = HTTPResponseData(
-            url="http://127.0.0.1:8080/",
+            url="https://8.8.8.8/",
             status_code=200,
             headers={"Server": "TestServer/1.0"},
             raw_set_cookie_headers=[],
         )
         mock_options.return_value = HTTPResponseData(
-            url="http://127.0.0.1:8080/",
+            url="https://8.8.8.8/",
             status_code=200,
             headers={"Allow": "GET, HEAD, OPTIONS"},
         )
@@ -168,9 +176,10 @@ def test_queue_and_batch_scan_routes(app_client):
         batch_res = app_client.post(
             "/scan/batch",
             json={
-                "targets": ["http://127.0.0.1:8080", "http://127.0.0.1:8081"],
+                "targets": ["https://8.8.8.8", "https://1.1.1.1"],
                 "authorized": True,
             },
+            headers=API_HEADERS,
         )
         assert batch_res.status_code == 201
         batch_data = batch_res.get_json()
@@ -181,12 +190,12 @@ def test_queue_and_batch_scan_routes(app_client):
         ids_str = ",".join(str(i) for i in scan_ids)
 
         # Test GET /scanner/batch/results
-        view_res = app_client.get(f"/scanner/batch/results?ids={ids_str}")
+        view_res = app_client.get(f"/scanner/batch/results?ids={ids_str}", headers=API_HEADERS)
         assert view_res.status_code == 200
         assert b"Executive Batch Audit Summary" in view_res.data
 
         # Test JSON format GET /scanner/batch/results?format=json
-        json_view_res = app_client.get(f"/scanner/batch/results?ids={ids_str}&format=json")
+        json_view_res = app_client.get(f"/scanner/batch/results?ids={ids_str}&format=json", headers=API_HEADERS)
         assert json_view_res.status_code == 200
         json_data = json_view_res.get_json()
         assert "aggregate_metrics" in json_data
@@ -199,6 +208,4 @@ def test_api_docs_route(app_client):
     assert res.status_code == 200
     assert b"VulnWatch REST API Reference" in res.data
     assert b"/api/scans" in res.data
-
-
 

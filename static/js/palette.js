@@ -49,7 +49,10 @@
     function fetchRecentScans() {
         if (scansFetched) return;
         scansFetched = true;
-        fetch('/api/scans')
+        const apiKey = sessionStorage.getItem('webguard_api_key') || '';
+        fetch('/api/scans', {
+            headers: apiKey ? { 'X-API-Key': apiKey } : {}
+        })
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 recentScans = (data || []).slice(0, 10).map(function (s) {

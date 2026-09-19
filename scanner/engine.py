@@ -12,6 +12,21 @@ from scanner.severity import SeverityLevel as ScannerSeverityLevel
 from scanner.target import TargetValidationError, validate_target_url
 
 
+SENSITIVE_RESPONSE_HEADER_MARKERS = (
+    "token", "secret", "key", "auth", "credential", "cookie", "session",
+)
+
+
+def redact_response_headers(headers: Dict[str, str]) -> Dict[str, str]:
+    """Preserve useful scan evidence without persisting credentials or cookies."""
+    return {
+        key: "[REDACTED]"
+        if any(marker in key.lower() for marker in SENSITIVE_RESPONSE_HEADER_MARKERS)
+        else value
+        for key, value in headers.items()
+    }
+
+
 def _to_db_severity(sev) -> DBSeverityLevel:
     """Safely convert any severity representation (Enum instance, string, or class type) to DBSeverityLevel."""
     if isinstance(sev, type):
@@ -125,7 +140,7 @@ class ScanEngine:
                 )
             else:
                 scan.status_code = get_resp.status_code
-                scan.response_headers = get_resp.headers
+                scan.response_headers = redact_response_headers(get_resp.headers)
 
                 # Step 3: Audit Security Headers
                 header_findings = audit_headers(target_url, get_resp.headers)
@@ -219,4 +234,3 @@ class ScanEngine:
         db.add(scan)
         db.commit()
         return scan
-

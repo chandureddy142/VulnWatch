@@ -3,6 +3,7 @@ import os
 import secrets
 import uuid
 from flask import Blueprint, jsonify, render_template, request
+from services.auth import require_api_key
 
 settings_bp = Blueprint("settings", __name__, url_prefix="/settings")
 
@@ -42,6 +43,7 @@ def save_settings(data: dict) -> None:
 
 
 @settings_bp.route("/", methods=["GET"])
+@require_api_key
 def settings_page():
     """Render the enterprise settings configuration page."""
     settings = load_settings()
@@ -49,6 +51,7 @@ def settings_page():
 
 
 @settings_bp.route("/", methods=["POST"])
+@require_api_key
 def save_settings_route():
     """Save updated settings from the settings form."""
     if request.is_json:
@@ -86,6 +89,7 @@ def save_settings_route():
 
 
 @settings_bp.route("/generate-api-key", methods=["POST"])
+@require_api_key
 def generate_api_key():
     """Generate and persist a new random API key."""
     settings = load_settings()

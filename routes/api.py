@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, render_template, request
 from database.db import get_session
 from database.models import Finding, Scan, ScanStatus, SeverityLevel
+from services.auth import require_api_key
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -12,6 +13,7 @@ def api_docs():
 
 
 @api_bp.route("/scans", methods=["GET"])
+@require_api_key
 def list_scans():
     """List all scans with severity summaries, supporting limit, offset, and status filter."""
     db = get_session()
@@ -38,6 +40,7 @@ def list_scans():
 
 
 @api_bp.route("/scans", methods=["POST"])
+@require_api_key
 def trigger_scan_api():
     """Trigger a new scan via /api/scans POST endpoint."""
     from routes.scanner import trigger_scan
@@ -45,6 +48,7 @@ def trigger_scan_api():
 
 
 @api_bp.route("/scans/batch", methods=["POST"])
+@require_api_key
 def trigger_batch_scan_api():
     """Trigger a multi-target batch scan via /api/scans/batch POST endpoint."""
     from routes.scanner import trigger_batch_scan
@@ -53,6 +57,7 @@ def trigger_batch_scan_api():
 
 @api_bp.route("/scans/<int:scan_id>", methods=["GET"])
 @api_bp.route("/scan/<int:scan_id>", methods=["GET"])
+@require_api_key
 def get_scan(scan_id: int):
     """Retrieve scan execution status, summary metrics, and recon intelligence."""
     db = get_session()
@@ -63,6 +68,7 @@ def get_scan(scan_id: int):
 
 
 @api_bp.route("/scan/<int:scan_id>/findings", methods=["GET"])
+@require_api_key
 def get_scan_findings(scan_id: int):
     """Retrieve detailed findings for a scan, with optional severity filtering."""
     db = get_session()
@@ -93,6 +99,7 @@ def get_scan_findings(scan_id: int):
 
 
 @api_bp.route("/scan/<int:scan_id>", methods=["DELETE"])
+@require_api_key
 def delete_scan(scan_id: int):
     """Delete a scan record and its associated findings from the database."""
     db = get_session()
@@ -103,4 +110,3 @@ def delete_scan(scan_id: int):
     db.delete(scan)
     db.commit()
     return jsonify({"message": f"Scan #{scan_id} deleted successfully."})
-

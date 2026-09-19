@@ -1,4 +1,3 @@
-cat << 'EOF' > .gitignore
 venv/
 __pycache__/
 *.pyc
@@ -8,4 +7,6 @@ __pycache__/
 *.sqlite3
 instance/
 .pytest_cache/
+reports_output/
+webguard.db
 EOF

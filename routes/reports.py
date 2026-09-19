@@ -6,6 +6,7 @@ from reports.html_report import generate_html_report
 from reports.json_report import generate_json_report
 from reports.pdf_report import generate_pdf_report
 from scanner.remediation_snippets import get_remediation_snippets
+from services.auth import require_api_key
 
 reports_bp = Blueprint("reports", __name__, url_prefix="/reports")
 
@@ -66,6 +67,7 @@ def _build_diff_map(current_scan: Scan) -> dict:
 
 
 @reports_bp.route("/<int:scan_id>", methods=["GET"])
+@require_api_key
 def view_report(scan_id: int):
     """Render interactive results view for a scan."""
     db = get_session()
@@ -86,6 +88,7 @@ def view_report(scan_id: int):
 
 
 @reports_bp.route("/<int:scan_id>/findings/<int:finding_id>/triage", methods=["PATCH"])
+@require_api_key
 def update_finding_triage(scan_id: int, finding_id: int):
     """Update the triage status and notes for a specific finding."""
     db = get_session()
@@ -115,6 +118,7 @@ def update_finding_triage(scan_id: int, finding_id: int):
 
 
 @reports_bp.route("/<int:scan_id>/html", methods=["GET"])
+@require_api_key
 def download_html_report(scan_id: int):
     """Serve standalone static HTML report file."""
     db = get_session()
@@ -132,6 +136,7 @@ def download_html_report(scan_id: int):
 
 
 @reports_bp.route("/<int:scan_id>/json", methods=["GET"])
+@require_api_key
 def download_json_report(scan_id: int):
     """Download scan findings as a JSON artifact."""
     db = get_session()
@@ -154,6 +159,7 @@ def download_json_report(scan_id: int):
 
 
 @reports_bp.route("/<int:scan_id>/pdf", methods=["GET"])
+@require_api_key
 def download_pdf_report(scan_id: int):
     """Download executive PDF assessment report."""
     db = get_session()

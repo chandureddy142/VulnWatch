@@ -7,6 +7,7 @@ from requests.exceptions import (
     SSLError,
     Timeout as ReqTimeout,
 )
+from scanner.target import TargetValidationError, validate_target_url
 
 
 @dataclass
@@ -29,7 +30,7 @@ class HTTPClient:
         self,
         timeout: int = 10,
         user_agent: str = "WebGuard-Security-Posture-Auditor/1.0",
-        verify_ssl: bool = False,  # Allow auditing local apps with self-signed certs
+        verify_ssl: bool = True,
     ):
         self.timeout = timeout
         self.timeout_tuple = (min(5, max(1, int(timeout))), max(1, int(timeout)))
@@ -44,13 +45,18 @@ class HTTPClient:
         """Executes an HTTP request with strict error handling and timeout limits."""
         req_headers = headers or {}
         try:
+            # Revalidate at every egress point.  This also protects callers
+            # other than ScanEngine from issuing requests to private networks.
+            safe_url = validate_target_url(url)
             resp = self.session.request(
                 method=method.upper(),
-                url=url,
+                url=safe_url,
                 headers=req_headers,
                 timeout=self.timeout_tuple,
                 verify=self.verify_ssl,
-                allow_redirects=True,
+                # Redirect destinations are untrusted input.  Do not follow them
+                # automatically, because that would bypass target validation.
+                allow_redirects=False,
             )
 
             # Extract raw Set-Cookie headers (requests collapses them by default in .headers dict)
@@ -72,6 +78,8 @@ class HTTPClient:
                 elapsed_ms=resp.elapsed.total_seconds() * 1000,
             )
 
+        except TargetValidationError as e:
+            return HTTPResponseData(url=url, error=f"Blocked unsafe target: {str(e)}")
         except SSLError as e:
             return HTTPResponseData(
                 url=url, error=f"SSL/TLS Certificate error: {str(e)}"

@@ -6,6 +6,7 @@ from sqlalchemy import func
 from database.db import get_session
 from database.models import Finding, Scan, ScanStatus, SeverityLevel
 from scanner.engine import cleanup_stale_scans
+from services.auth import require_api_key
 
 dashboard_bp = Blueprint("dashboard", __name__)
 
@@ -33,6 +34,7 @@ def _score_tier(score: int) -> str:
 
 @dashboard_bp.route("/", methods=["GET"])
 @dashboard_bp.route("/dashboard", methods=["GET"])
+@require_api_key
 def index():
     """Render dashboard summary metrics, asset inventory, and recent scans list."""
     db = get_session()

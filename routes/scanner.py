@@ -1,4 +1,5 @@
 import os
+import uuid
 from flask import Blueprint, current_app, jsonify, redirect, render_template, request, url_for
 from database.db import get_session
 from database.models import Scan, ScanStatus
@@ -8,6 +9,7 @@ from reports.pdf_report import generate_pdf_report
 from scanner.engine import ScanEngine, cleanup_stale_scans
 from scanner.target import TargetValidationError, validate_target_url
 from services.notifier import dispatch_webhook
+from services.auth import require_api_key
 from routes.settings import load_settings
 
 scanner_bp = Blueprint("scanner", __name__)
@@ -27,6 +29,7 @@ def scanner_form():
 
 
 @scanner_bp.route("/queue", methods=["GET"])
+@require_api_key
 def get_active_queue():
     """Retrieve list of running or pending scans for status polling."""
     db = get_session()
@@ -42,6 +45,7 @@ def get_active_queue():
 
 
 @scanner_bp.route("/scan", methods=["POST"])
+@require_api_key
 def trigger_scan():
     """Trigger a new WebGuard security posture audit for a single target URL.
 
@@ -92,8 +96,10 @@ def trigger_scan():
 
     try:
         scan = engine.execute_scan(validated_url)
-    except Exception as e:
-        return jsonify({"error": "Scan Execution Error", "message": str(e)}), 500
+    except Exception:
+        error_id = uuid.uuid4().hex
+        current_app.logger.exception("Scan execution failed id=%s", error_id)
+        return jsonify({"error": "Scan execution failed.", "error_id": error_id}), 500
 
     # Compute posture score for webhook payload
     posture_score = max(
@@ -161,6 +167,7 @@ def trigger_scan():
 
 @scanner_bp.route("/scan/batch", methods=["POST"])
 @scanner_bp.route("/scanner/batch", methods=["POST"])
+@require_api_key
 def trigger_batch_scan():
     """Trigger a batch of security posture audits across multiple target URLs.
 
@@ -278,8 +285,10 @@ def trigger_batch_scan():
                     "diff_summary": diff_summary,
                 }
             )
-        except Exception as e:
-            errors.append({"target_url": raw_url, "error": str(e)})
+        except Exception:
+            error_id = uuid.uuid4().hex
+            current_app.logger.exception("Batch scan failed id=%s", error_id)
+            errors.append({"target_url": raw_url, "error": "Scan execution failed.", "error_id": error_id})
 
     if not request.is_json:
         ids_str = ",".join(str(s["scan_id"]) for s in batch_results if "scan_id" in s)
@@ -299,6 +308,7 @@ def trigger_batch_scan():
 
 @scanner_bp.route("/batch/results", methods=["GET"])
 @scanner_bp.route("/scanner/batch/results", methods=["GET"])
+@require_api_key
 def view_batch_results():
     """Render executive summary for a completed batch audit."""
     ids_param = request.args.get("ids", "").strip()

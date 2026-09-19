@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const submitBtnText = document.getElementById('btn-submit-text');
     const scanForm = document.getElementById('scan-form');
     const targetUrlInput = document.getElementById('target_url');
+    const apiKeyInput = document.getElementById('api_key');
     const batchTargetsInput = document.getElementById('batch_targets');
     const scanModeInput = document.getElementById('scan_mode');
     const protocolTag = document.getElementById('protocol-tag');
@@ -32,6 +33,26 @@ document.addEventListener('DOMContentLoaded', function () {
     let queuePollInterval = null;
 
     let isSubmitting = false;
+
+    if (apiKeyInput) {
+        apiKeyInput.value = sessionStorage.getItem('webguard_api_key') || '';
+        apiKeyInput.addEventListener('change', function () {
+            sessionStorage.setItem('webguard_api_key', this.value.trim());
+        });
+    }
+
+    function authenticatedHeaders() {
+        const apiKey = apiKeyInput ? apiKeyInput.value.trim() : '';
+        if (!apiKey) {
+            throw new Error('An API key is required to start a scan.');
+        }
+        sessionStorage.setItem('webguard_api_key', apiKey);
+        return {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-API-Key': apiKey
+        };
+    }
 
     // Enable the submit button only once authorization is confirmed
     if (authCheckbox && submitBtn) {
@@ -201,28 +222,50 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch('/queue')
             .then(res => res.json())
             .then(scans => {
+                queueListContainer.replaceChildren();
                 if (!scans || scans.length === 0) {
-                    queueListContainer.innerHTML = '<div class="text-dim text-center py-3" style="padding:16px;">No running or pending scans in background queue.</div>';
+                    const empty = document.createElement('div');
+                    empty.className = 'text-dim text-center py-3';
+                    empty.style.padding = '16px';
+                    empty.textContent = 'No running or pending scans in background queue.';
+                    queueListContainer.appendChild(empty);
                     return;
                 }
-                let html = '';
                 scans.forEach(s => {
-                    html += `
-                        <div class="queue-item">
-                            <div class="queue-item-url" title="${s.target_url}">${s.target_url}</div>
-                            <span class="queue-item-status ${s.status.toLowerCase()}">${s.status}</span>
-                        </div>
-                    `;
+                    const item = document.createElement('div');
+                    item.className = 'queue-item';
+                    const url = document.createElement('div');
+                    url.className = 'queue-item-url';
+                    url.title = String(s.target_url || '');
+                    url.textContent = String(s.target_url || '');
+                    const status = document.createElement('span');
+                    const statusText = String(s.status || '').toLowerCase();
+                    status.className = 'queue-item-status ' + statusText.replace(/[^a-z0-9_-]/g, '');
+                    status.textContent = String(s.status || 'Unknown');
+                    item.append(url, status);
+                    queueListContainer.appendChild(item);
                 });
-                queueListContainer.innerHTML = html;
             })
             .catch(err => {
-                queueListContainer.innerHTML = `<div class="text-dim text-center py-3" style="color:var(--sev-critical); padding:16px;">Failed to fetch queue: ${err.message}</div>`;
+                queueListContainer.replaceChildren();
+                const error = document.createElement('div');
+                error.className = 'text-dim text-center py-3';
+                error.style.color = 'var(--sev-critical)';
+                error.style.padding = '16px';
+                error.textContent = `Failed to fetch queue: ${err.message}`;
+                queueListContainer.appendChild(error);
             });
     }
 
     function startScan(targetUrl) {
         if (isSubmitting) return;
+        let headers;
+        try {
+            headers = authenticatedHeaders();
+        } catch (err) {
+            showError(err.message);
+            return;
+        }
         isSubmitting = true;
 
         submitBtn.disabled = true;
@@ -237,10 +280,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         fetch('/scan', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
+            headers: headers,
             body: JSON.stringify({
                 target_url: targetUrl,
                 authorized: true
@@ -285,6 +325,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function startBatchScan(targets) {
         if (isSubmitting) return;
+        let headers;
+        try {
+            headers = authenticatedHeaders();
+        } catch (err) {
+            showError(err.message);
+            return;
+        }
         isSubmitting = true;
 
         submitBtn.disabled = true;
@@ -299,10 +346,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         fetch('/scan/batch', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
+            headers: headers,
             body: JSON.stringify({
                 targets: targets,
                 authorized: true
@@ -367,4 +411,3 @@ document.addEventListener('DOMContentLoaded', function () {
         formError.classList.remove('hidden');
     }
 });
-

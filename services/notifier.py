@@ -6,7 +6,16 @@ Critical or High severity findings are identified in a scan.
 import json
 import urllib.request
 import urllib.error
+from urllib.parse import urlparse
 from typing import Optional
+from scanner.target import TargetValidationError, validate_target_url
+
+
+class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Abort redirects so a validated webhook cannot pivot to another host."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise urllib.error.HTTPError(req.full_url, code, "Webhook redirects are disabled", headers, fp)
 
 
 def dispatch_webhook(
@@ -40,6 +49,13 @@ def dispatch_webhook(
     if not webhook_url:
         return False
 
+    try:
+        if urlparse(webhook_url).scheme.lower() != "https":
+            return False
+        webhook_url = validate_target_url(webhook_url)
+    except (TargetValidationError, ValueError):
+        return False
+
     if critical_count == 0 and high_count == 0:
         return False  # Only alert on Critical/High findings
 
@@ -66,13 +82,17 @@ def dispatch_webhook(
     payload_bytes = json.dumps(payload).encode("utf-8")
 
     try:
+        # Validate again immediately before opening the socket.  The custom
+        # opener refuses redirects, so no later destination can bypass this.
+        safe_webhook_url = validate_target_url(webhook_url)
         req = urllib.request.Request(
-            webhook_url,
+            safe_webhook_url,
             data=payload_bytes,
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=5) as resp:
+        opener = urllib.request.build_opener(_NoRedirectHandler())
+        with opener.open(req, timeout=5) as resp:
             return resp.status in (200, 204)
     except (urllib.error.URLError, Exception):
         # Gracefully no-op on any network failure — don't break the scan flow

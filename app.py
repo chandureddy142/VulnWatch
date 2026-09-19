@@ -1,5 +1,6 @@
 import os
-from flask import Flask, jsonify
+import uuid
+from flask import Flask, jsonify, request
 from config.config import config
 from database.db import init_db, shutdown_session
 from routes.api import api_bp
@@ -16,7 +17,13 @@ def create_app(config_name: str = "default") -> Flask:
 
     # Load configuration
     cfg_class = config.get(config_name, config["default"])
-    app.config.from_object(cfg_class)
+    cfg = cfg_class()
+    app.config.from_object(cfg)
+    app.config.update(
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+        SESSION_COOKIE_SECURE=config_name == "production",
+    )
 
     # Initialize Database Engine
     init_db(app.config["SQLALCHEMY_DATABASE_URI"])
@@ -33,14 +40,24 @@ def create_app(config_name: str = "default") -> Flask:
     app.register_blueprint(api_bp)
     app.register_blueprint(settings_bp)
 
+    @app.after_request
+    def add_security_headers(response):
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        response.headers.setdefault("Permissions-Policy", "interest-cohort=()")
+        if request.path.startswith(("/api/", "/reports/")):
+            response.headers.setdefault("Cache-Control", "no-store")
+        return response
+
     # Error Handlers
     @app.errorhandler(TargetValidationError)
     def handle_target_validation_error(err):
-        return jsonify({"error": "Target Validation Error", "message": str(err)}), 400
+        return jsonify({"error": "Invalid target."}), 400
 
     @app.errorhandler(400)
     def handle_bad_request(err):
-        return jsonify({"error": "Bad Request", "message": str(err)}), 400
+        return jsonify({"error": "Bad Request"}), 400
 
     @app.errorhandler(404)
     def handle_not_found(err):
@@ -48,7 +65,9 @@ def create_app(config_name: str = "default") -> Flask:
 
     @app.errorhandler(500)
     def handle_internal_error(err):
-        return jsonify({"error": "Internal Server Error", "message": str(err)}), 500
+        error_id = uuid.uuid4().hex
+        app.logger.exception("Unhandled application error id=%s", error_id, exc_info=err)
+        return jsonify({"error": "An internal error occurred.", "error_id": error_id}), 500
 
     return app
 

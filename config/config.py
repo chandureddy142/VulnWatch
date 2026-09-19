@@ -7,9 +7,8 @@ class Config:
     # Server settings (Local-only binding by default for security posture auditing)
     HOST = os.environ.get("WEBGARD_HOST", "127.0.0.1")
     PORT = int(os.environ.get("WEBGARD_PORT", 5000))
-    SECRET_KEY = os.environ.get(
-        "SECRET_KEY", "webguard-dev-secret-key-change-in-production"
-    )
+    SECRET_KEY = os.environ.get("SECRET_KEY")
+    API_KEY = os.environ.get("WEBGUARD_API_KEY")
 
     # Scan & Auditing Parameters
     SCAN_TIMEOUT = int(os.environ.get("WEBGARD_SCAN_TIMEOUT", 10))  # Seconds per HTTP request
@@ -35,6 +34,7 @@ class Config:
 class DevelopmentConfig(Config):
     DEBUG = True
     ALLOW_LOCALHOST = True
+    SECRET_KEY = os.environ.get("SECRET_KEY", "development-only-change-me")
 
 
 class TestingConfig(Config):
@@ -44,11 +44,22 @@ class TestingConfig(Config):
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
     SCAN_TIMEOUT = 2
     DEFAULT_CONCURRENCY = 2
+    SECRET_KEY = "testing-secret-not-for-production"
+    API_KEY = "testing-api-key"
 
 
 class ProductionConfig(Config):
     DEBUG = False
     ALLOW_LOCALHOST = False
+
+    def __init__(self):
+        if not self.SECRET_KEY:
+            raise RuntimeError("SECRET_KEY must be set in the environment for production.")
+        database_url = os.environ.get("DATABASE_URL")
+        if not database_url or database_url.lower().startswith("sqlite"):
+            raise RuntimeError(
+                "DATABASE_URL must be configured with a non-SQLite production database."
+            )
 
 
 config = {
