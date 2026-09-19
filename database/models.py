@@ -35,6 +35,30 @@ class TriageStatus(enum.Enum):
     false_positive = "false_positive"
 
 
+class User(Base):
+    """Represents an authenticated user (Google OAuth) or anonymous guest record."""
+
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    google_id = Column(String(128), unique=True, nullable=True)
+    email = Column(String(320), unique=True, nullable=False)
+    name = Column(String(255), nullable=True)
+    picture = Column(String(2048), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    scans = relationship("Scan", back_populates="user", cascade="all, delete-orphan")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "email": self.email,
+            "name": self.name,
+            "picture": self.picture,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
 class Scan(Base):
     """Represents an individual audit scan execution against a target URL."""
 
@@ -57,7 +81,12 @@ class Scan(Base):
     response_headers = Column(JSON, nullable=True)
     status_code = Column(Integer, nullable=True)
 
+    # Auth ownership — nullable so existing guest/anonymous scans stay valid
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    guest_session_id = Column(String(100), nullable=True)
+
     # Relationships
+    user = relationship("User", back_populates="scans")
     findings = relationship(
         "Finding", back_populates="scan", cascade="all, delete-orphan"
     )
@@ -102,6 +131,8 @@ class Scan(Base):
             },
             "status_code": self.status_code,
             "findings_count": len(self.findings),
+            "user_id": self.user_id,
+            "guest_session_id": self.guest_session_id,
         }
 
 

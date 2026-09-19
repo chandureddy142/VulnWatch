@@ -1,6 +1,6 @@
 import os
 import uuid
-from flask import Blueprint, current_app, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, jsonify, redirect, render_template, request, session, url_for
 from database.db import get_session
 from database.models import Scan, ScanStatus
 from reports.html_report import generate_html_report
@@ -85,6 +85,30 @@ def trigger_scan():
     except TargetValidationError as e:
         return jsonify({"error": "Invalid Target URL", "message": str(e)}), 400
 
+    # --- Guest quota enforcement & ownership tagging ---
+    db = get_session()
+    user_id = session.get("user_id")
+    if user_id:
+        guest_session_id = None  # authenticated user – no guest tracking needed
+    else:
+        guest_session_id = session.get("guest_id")
+        if not guest_session_id:
+            guest_session_id = str(uuid.uuid4())
+            session["guest_id"] = guest_session_id
+        guest_limit = current_app.config.get("GUEST_SCAN_LIMIT", 3)
+        guest_count = db.query(Scan).filter_by(guest_session_id=guest_session_id).count()
+        if guest_count >= guest_limit:
+            return (
+                jsonify(
+                    {
+                        "error": f"Guest limit reached ({guest_count}/{guest_limit} scans). "
+                                 "Please sign in with Google to continue.",
+                        "limit_reached": True,
+                    }
+                ),
+                403,
+            )
+
     # Instantiate Scan Engine & Execute Audit
     engine = ScanEngine(
         timeout=current_app.config.get("SCAN_TIMEOUT", 10),
@@ -100,6 +124,13 @@ def trigger_scan():
         error_id = uuid.uuid4().hex
         current_app.logger.exception("Scan execution failed id=%s", error_id)
         return jsonify({"error": "Scan execution failed.", "error_id": error_id}), 500
+
+    # Tag ownership on the persisted scan record
+    if user_id:
+        scan.user_id = user_id
+    elif guest_session_id:
+        scan.guest_session_id = guest_session_id
+    db.commit()
 
     # Compute posture score for webhook payload
     posture_score = max(
@@ -214,6 +245,34 @@ def trigger_batch_scan():
         )
 
     allow_localhost = current_app.config.get("ALLOW_LOCALHOST", True)
+
+    # --- Guest quota enforcement & ownership tagging (batch) ---
+    db_sess = get_session()
+    user_id = session.get("user_id")
+    if user_id:
+        guest_session_id = None
+    else:
+        guest_session_id = session.get("guest_id")
+        if not guest_session_id:
+            guest_session_id = str(uuid.uuid4())
+            session["guest_id"] = guest_session_id
+        guest_limit = current_app.config.get("GUEST_SCAN_LIMIT", 3)
+        guest_count = db_sess.query(Scan).filter_by(guest_session_id=guest_session_id).count()
+        remaining = guest_limit - guest_count
+        if remaining <= 0:
+            return (
+                jsonify(
+                    {
+                        "error": f"Guest limit reached ({guest_count}/{guest_limit} scans). "
+                                 "Please sign in with Google to continue.",
+                        "limit_reached": True,
+                    }
+                ),
+                403,
+            )
+        # Clip the batch to remaining quota
+        target_lines = target_lines[:remaining]
+
     engine = ScanEngine(
         timeout=current_app.config.get("SCAN_TIMEOUT", 10),
         user_agent=current_app.config.get(
@@ -242,6 +301,14 @@ def trigger_batch_scan():
 
         try:
             scan = engine.execute_scan(validated_url)
+
+            # Tag ownership
+            if user_id:
+                scan.user_id = user_id
+            elif guest_session_id:
+                scan.guest_session_id = guest_session_id
+            db_sess.commit()
+
             posture_score = max(
                 0,
                 min(

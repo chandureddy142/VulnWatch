@@ -4,6 +4,6 @@
     "headers",
     "cookies"
   ],
-  "webhook_url": "",
-  "api_key": ""
+  "webhook_url": "https://hooks.slack.com/services/test/test/test",
+  "api_key": "wg_aec7dd2744541e4672e7acdf379d70be8f078888b8445b3d"
 }

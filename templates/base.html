@@ -72,6 +72,34 @@
                         <span class="dot" aria-hidden="true"></span>
                         {{ 'LOCAL ENV' if is_local else 'REMOTE HOST' }}
                     </span>
+
+                    <!-- Auth: user avatar dropdown or guest badge -->
+                    {% if session.get('user') %}
+                        <div class="user-menu" id="user-menu">
+                            <button class="user-avatar-btn" id="user-avatar-btn" aria-haspopup="true" aria-expanded="false" title="{{ session['user'].get('name', 'Account') }}">
+                                {% if session['user'].get('picture') %}
+                                    <img src="{{ session['user']['picture'] }}" alt="{{ session['user'].get('name', 'User') }}" class="user-avatar-img">
+                                {% else %}
+                                    <span class="user-avatar-initials">{{ (session['user'].get('name') or 'U')[0].upper() }}</span>
+                                {% endif %}
+                            </button>
+                            <div class="user-dropdown" id="user-dropdown" hidden>
+                                <div class="user-dropdown-header">
+                                    <strong>{{ session['user'].get('name', 'Signed In') }}</strong>
+                                    <small>{{ session['user'].get('email', '') }}</small>
+                                </div>
+                                <a href="/profile" class="user-dropdown-item">My Profile &amp; Scans</a>
+                                <a href="/auth/logout" class="user-dropdown-item user-dropdown-item--danger">Sign Out</a>
+                            </div>
+                        </div>
+                    {% else %}
+                        {% set guest_id = session.get('guest_id') %}
+                        {% set guest_limit = config.get('GUEST_SCAN_LIMIT', 3) if config is defined else 3 %}
+                        <a href="/auth/login" class="nav-guest-badge" title="Sign in to unlock unlimited scans">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            <span>Sign In</span>
+                        </a>
+                    {% endif %}
                 </div>
             </div>
         </header>
@@ -119,6 +147,25 @@
                 var next = current === 'light' ? 'dark' : 'light';
                 html.setAttribute('data-theme', next);
                 localStorage.setItem('wg-theme', next);
+            });
+        })();
+
+        // User avatar dropdown
+        (function() {
+            var avatarBtn = document.getElementById('user-avatar-btn');
+            var dropdown = document.getElementById('user-dropdown');
+            if (!avatarBtn || !dropdown) return;
+
+            avatarBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var isHidden = dropdown.hasAttribute('hidden');
+                dropdown.toggleAttribute('hidden', !isHidden);
+                avatarBtn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+            });
+
+            document.addEventListener('click', function() {
+                dropdown.setAttribute('hidden', '');
+                avatarBtn.setAttribute('aria-expanded', 'false');
             });
         })();
     </script>

@@ -209,3 +209,77 @@ def test_api_docs_route(app_client):
     assert b"VulnWatch REST API Reference" in res.data
     assert b"/api/scans" in res.data
 
+
+def test_login_page_renders(app_client):
+    """GET /auth/login renders the login page without error."""
+    res = app_client.get("/auth/login")
+    assert res.status_code == 200
+    assert b"VulnWatch" in res.data
+    assert b"Sign In" in res.data or b"guest" in res.data.lower()
+
+
+def test_logout_clears_session_and_redirects(app_client):
+    """GET /auth/logout clears session and redirects to home."""
+    with app_client.session_transaction() as sess:
+        sess["user_id"] = 999
+        sess["user"] = {"id": 999, "email": "test@test.com", "name": "Test", "picture": ""}
+
+    res = app_client.get("/auth/logout")
+    # Should redirect
+    assert res.status_code in (301, 302, 303)
+
+    with app_client.session_transaction() as sess:
+        assert "user_id" not in sess
+        assert "user" not in sess
+
+
+def test_profile_requires_login_redirect(app_client):
+    """GET /profile redirects unauthenticated users to login."""
+    res = app_client.get("/profile")
+    assert res.status_code in (301, 302, 303)
+    location = res.headers.get("Location", "")
+    assert "/auth/login" in location
+
+
+def test_guest_quota_enforcement(app_client):
+    """Guests are blocked once they reach the scan quota limit."""
+    with patch("scanner.engine.HTTPClient.get") as mock_get, patch(
+        "scanner.engine.HTTPClient.options"
+    ) as mock_options:
+        mock_get.return_value = HTTPResponseData(
+            url="https://8.8.8.8/",
+            status_code=200,
+            headers={"Server": "TestServer/1.0"},
+            raw_set_cookie_headers=[],
+        )
+        mock_options.return_value = HTTPResponseData(
+            url="https://8.8.8.8/",
+            status_code=200,
+            headers={"Allow": "GET, HEAD, OPTIONS"},
+        )
+
+        # Simulate a guest session that has already hit the limit
+        guest_id = "test-guest-exhausted-12345"
+        with app_client.session_transaction() as sess:
+            sess["guest_id"] = guest_id
+
+        # Pre-seed 3 guest scans in the DB by running 3 real scans
+        for _ in range(3):
+            app_client.post(
+                "/scan",
+                json={"target_url": "https://8.8.8.8", "authorized": True},
+                headers=API_HEADERS,
+            )
+
+        # 4th scan must be blocked with 403
+        res = app_client.post(
+            "/scan",
+            json={"target_url": "https://8.8.8.8", "authorized": True},
+            headers=API_HEADERS,
+        )
+        assert res.status_code == 403
+        data = res.get_json()
+        assert data.get("limit_reached") is True
+        assert "Guest limit reached" in data.get("error", "")
+
+

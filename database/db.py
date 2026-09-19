@@ -55,6 +55,20 @@ def _run_migrations(database_uri: str):
                 text("ALTER TABLE findings ADD COLUMN triage_notes TEXT")
             )
 
+        # Check for auth columns on scans table
+        result = conn.execute(text("PRAGMA table_info(scans)"))
+        scan_columns = {row[1] for row in result}
+
+        if "user_id" not in scan_columns:
+            conn.execute(
+                text("ALTER TABLE scans ADD COLUMN user_id INTEGER REFERENCES users(id)")
+            )
+
+        if "guest_session_id" not in scan_columns:
+            conn.execute(
+                text("ALTER TABLE scans ADD COLUMN guest_session_id VARCHAR(100)")
+            )
+
         conn.commit()
 
 

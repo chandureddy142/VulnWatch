@@ -30,6 +30,16 @@ class Config:
     # Reports Storage Path
     REPORTS_DIR = os.path.join(BASE_DIR, "reports_output")
 
+    # Google OAuth 2.0 credentials (optional – leave empty to disable Google sign-in)
+    GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
+    GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
+    GOOGLE_REDIRECT_URI = os.environ.get(
+        "GOOGLE_REDIRECT_URI", "http://127.0.0.1:5000/auth/callback"
+    )
+
+    # Guest scan quota (scans allowed before requiring sign-in)
+    GUEST_SCAN_LIMIT = int(os.environ.get("GUEST_SCAN_LIMIT", 3))
+
 
 class DevelopmentConfig(Config):
     DEBUG = True

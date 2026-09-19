@@ -807,3 +807,118 @@ textarea:focus {
   .toast-container { bottom: 12px; right: 12px; left: 12px; max-width: none; }
   .palette-modal { margin: 0 12px; }
 }
+
+/* =========================================================
+   Auth UI — User Avatar Dropdown & Guest Badge
+   ========================================================= */
+
+/* User avatar button */
+.user-avatar-btn {
+  background: none;
+  border: 2px solid var(--border-strong);
+  border-radius: 50%;
+  cursor: pointer;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.user-avatar-btn:hover {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-soft);
+}
+
+.user-avatar-img {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.user-avatar-initials {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--brand);
+  line-height: 1;
+}
+
+/* Dropdown menu */
+.user-menu {
+  position: relative;
+}
+
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 220px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-overlay);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.user-dropdown[hidden] { display: none; }
+
+.user-dropdown-header {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.user-dropdown-header strong {
+  font-size: 0.9rem;
+  color: var(--text-1);
+}
+.user-dropdown-header small {
+  font-size: 0.8rem;
+  color: var(--text-2);
+}
+
+.user-dropdown-item {
+  display: block;
+  padding: 0.65rem 1rem;
+  font-size: 0.875rem;
+  color: var(--text-1);
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.user-dropdown-item:hover {
+  background: var(--surface-2);
+}
+.user-dropdown-item--danger {
+  color: var(--err);
+  border-top: 1px solid var(--border);
+}
+
+/* Guest "Sign In" badge */
+.nav-guest-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  background: var(--brand-soft);
+  border: 1px solid var(--brand-border);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--brand);
+  text-decoration: none;
+  transition: background 0.2s, box-shadow 0.2s;
+  white-space: nowrap;
+}
+.nav-guest-badge:hover {
+  background: var(--brand);
+  color: #ffffff;
+  border-color: var(--brand);
+  box-shadow: 0 2px 8px rgba(67, 56, 202, 0.3);
+}
+

@@ -11,3 +11,4 @@ requests
 beautifulsoup4
 cryptography
 urllib3
+authlib>=1.3.0

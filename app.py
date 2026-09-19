@@ -4,6 +4,7 @@ from flask import Flask, jsonify, request
 from config.config import config
 from database.db import init_db, shutdown_session
 from routes.api import api_bp
+from routes.auth import auth_bp, profile_bp
 from routes.dashboard import dashboard_bp
 from routes.reports import reports_bp
 from routes.scanner import scanner_bp
@@ -39,6 +40,8 @@ def create_app(config_name: str = "default") -> Flask:
     app.register_blueprint(reports_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(settings_bp)
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(profile_bp)
 
     @app.after_request
     def add_security_headers(response):
