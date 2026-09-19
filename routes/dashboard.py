@@ -34,7 +34,6 @@ def _score_tier(score: int) -> str:
 
 @dashboard_bp.route("/", methods=["GET"])
 @dashboard_bp.route("/dashboard", methods=["GET"])
-@require_api_key
 def index():
     """Render dashboard summary metrics, asset inventory, and recent scans list."""
     db = get_session()
