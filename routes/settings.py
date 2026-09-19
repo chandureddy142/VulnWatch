@@ -43,7 +43,6 @@ def save_settings(data: dict) -> None:
 
 
 @settings_bp.route("/", methods=["GET"])
-@require_api_key
 def settings_page():
     """Render the enterprise settings configuration page."""
     settings = load_settings()
