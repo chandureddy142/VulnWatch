@@ -896,7 +896,13 @@ textarea:focus {
 }
 .user-dropdown-item--danger {
   color: var(--err);
-  border-top: 1px solid var(--border);
+}
+
+/* Divider line inside dropdowns */
+.user-dropdown-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0.25rem 0;
 }
 
 /* ── Guest mode navbar group ─────────────────────────────────────────────── */
@@ -981,5 +987,59 @@ textarea:focus {
   color: #ffffff;
   border-color: var(--brand);
   box-shadow: 0 2px 8px rgba(67, 56, 202, 0.3);
+}
+
+/* ── Guest dropdown button (clickable pill that opens the guest menu) ──────── */
+.guest-quota-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  background: color-mix(in srgb, var(--brand) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand) 30%, transparent);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--brand);
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: background 0.18s, box-shadow 0.18s;
+}
+.guest-quota-btn:hover {
+  background: color-mix(in srgb, var(--brand) 20%, transparent);
+  box-shadow: 0 1px 6px color-mix(in srgb, var(--brand) 20%, transparent);
+}
+.guest-quota-btn[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--brand) 22%, transparent);
+  box-shadow: 0 0 0 3px var(--brand-soft);
+}
+.guest-quota-btn .chevron-icon {
+  transition: transform 0.2s ease;
+  opacity: 0.7;
+}
+.guest-quota-btn[aria-expanded="true"] .chevron-icon {
+  transform: rotate(180deg);
+}
+
+/* guest-dropdown: same positioning/layout as user-dropdown */
+.guest-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 220px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-overlay);
+  z-index: 1000;
+  overflow: hidden;
+}
+.guest-dropdown[hidden] { display: none; }
+
+/* guest-menu wraps the button + dropdown; must be position:relative */
+.guest-menu {
+  position: relative;
 }
 

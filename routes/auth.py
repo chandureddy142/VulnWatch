@@ -122,9 +122,8 @@ def login():
     if session.get("user_id"):
         return redirect(url_for("dashboard.index"))
 
-    # Already in guest mode? Send to scanner
-    if session.get("is_guest") and request.cookies.get("guest_device_id"):
-        return redirect(url_for("scanner.scanner_form"))
+    # NOTE: Do NOT redirect guests here — they may be clicking "Sign In with Google"
+    # from the guest dropdown and need to see the actual sign-in page.
 
     oauth_available = bool(
         current_app.config.get("GOOGLE_CLIENT_ID")
@@ -153,6 +152,7 @@ def login():
         next=request.args.get("next", "/scanner"),
         reason=request.args.get("reason", ""),
     )
+
 
 
 @auth_bp.route("/google")
