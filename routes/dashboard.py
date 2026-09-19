@@ -1,12 +1,13 @@
 from datetime import datetime, timedelta
 from collections import defaultdict
 from urllib.parse import urlparse
-from flask import Blueprint, jsonify, render_template, request, redirect, url_for
+from flask import Blueprint, jsonify, render_template, request, redirect, session, url_for
 from sqlalchemy import func
 from database.db import get_session
 from database.models import Finding, Scan, ScanStatus, SeverityLevel
 from scanner.engine import cleanup_stale_scans
 from services.auth import require_api_key
+from utils.privacy import mask_domain, check_scan_ownership
 
 dashboard_bp = Blueprint("dashboard", __name__)
 
@@ -39,24 +40,32 @@ def index():
     db = get_session()
     cleanup_stale_scans(db, max_age_seconds=120)
 
-    total_scans = db.query(Scan).count()
+    user_id = session.get("user_id")
+    guest_id = session.get("guest_id") or session.get("guest_session_id")
 
-    # Aggregate severity totals across all scans
+    # Strict multi-tenant isolation: filter scans to active user or guest session
+    if user_id:
+        base_query = db.query(Scan).filter(Scan.user_id == user_id)
+    elif guest_id:
+        base_query = db.query(Scan).filter(Scan.guest_session_id == guest_id)
+    else:
+        # Brand new visitor with neither session: filter False (empty state)
+        base_query = db.query(Scan).filter(False)
+
+    total_scans = base_query.count()
+
+    # Aggregate severity totals across tenant's scans
     totals = {
-        "critical": db.query(func.sum(Scan.critical_count)).scalar() or 0,
-        "high": db.query(func.sum(Scan.high_count)).scalar() or 0,
-        "medium": db.query(func.sum(Scan.medium_count)).scalar() or 0,
-        "low": db.query(func.sum(Scan.low_count)).scalar() or 0,
-        "info": db.query(func.sum(Scan.info_count)).scalar() or 0,
+        "critical": base_query.with_entities(func.sum(Scan.critical_count)).scalar() or 0,
+        "high": base_query.with_entities(func.sum(Scan.high_count)).scalar() or 0,
+        "medium": base_query.with_entities(func.sum(Scan.medium_count)).scalar() or 0,
+        "low": base_query.with_entities(func.sum(Scan.low_count)).scalar() or 0,
+        "info": base_query.with_entities(func.sum(Scan.info_count)).scalar() or 0,
     }
 
-    # Security Posture Score — average per-scan score across COMPLETED scans
-    # Computing on aggregate totals collapses to 0 when finding counts are large;
-    # averaging individual scan scores gives a meaningful representative metric.
+    # Security Posture Score — average per-scan score across COMPLETED scans for this tenant
     completed_scans = (
-        db.query(Scan)
-        .filter(Scan.status == ScanStatus.COMPLETED)
-        .all()
+        base_query.filter(Scan.status == ScanStatus.COMPLETED).all()
     )
     if completed_scans:
         individual_scores = [
@@ -73,8 +82,7 @@ def index():
     # 30-day daily scan volume for sparkline
     thirty_days_ago = datetime.utcnow() - timedelta(days=30)
     recent_all = (
-        db.query(Scan)
-        .filter(Scan.started_at >= thirty_days_ago)
+        base_query.filter(Scan.started_at >= thirty_days_ago)
         .order_by(Scan.started_at.asc())
         .all()
     )
@@ -93,7 +101,7 @@ def index():
 
     # Per-target scan frequency & Asset Inventory aggregation
     target_freq: dict = defaultdict(int)
-    all_scans = db.query(Scan).all()
+    all_scans = base_query.all()
     asset_groups: dict = defaultdict(list)
 
     for s in all_scans:
@@ -116,8 +124,9 @@ def index():
             latest_scan.medium_count,
             latest_scan.low_count,
         )
+        is_owner = check_scan_ownership(latest_scan, user_id=user_id, guest_session_id=guest_id)
         asset_inventory.append({
-            "hostname": host,
+            "hostname": mask_domain(host, is_owner),
             "scan_count": len(scans_list),
             "last_scanned_at": latest_scan.started_at.strftime("%Y-%m-%d %H:%M"),
             "latest_scan_id": latest_scan.id,
@@ -130,11 +139,11 @@ def index():
     asset_inventory.sort(key=lambda x: x["scan_count"], reverse=True)
 
     recent_scans_models = (
-        db.query(Scan).order_by(Scan.started_at.desc()).limit(50).all()
+        base_query.order_by(Scan.started_at.desc()).limit(50).all()
     )
     recent_scans = []
     for s in recent_scans_models:
-        d = s.to_dict()
+        d = s.to_dict(user_id=user_id, guest_session_id=guest_id)
         d["recurrence"] = target_freq.get(s.target_url, 1)
         recent_scans.append(d)
 

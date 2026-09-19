@@ -1,7 +1,8 @@
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, jsonify, render_template, request, session
 from database.db import get_session
 from database.models import Finding, Scan, ScanStatus, SeverityLevel
 from services.auth import require_api_key
+from utils.privacy import check_scan_ownership
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -17,7 +18,16 @@ def api_docs():
 def list_scans():
     """List all scans with severity summaries, supporting limit, offset, and status filter."""
     db = get_session()
-    query = db.query(Scan).order_by(Scan.started_at.desc())
+    user_id = session.get("user_id")
+    guest_id = session.get("guest_id") or session.get("guest_session_id")
+
+    query = db.query(Scan)
+    if user_id:
+        query = query.filter(Scan.user_id == user_id)
+    elif guest_id:
+        query = query.filter(Scan.guest_session_id == guest_id)
+
+    query = query.order_by(Scan.started_at.desc())
 
     status_filter = request.args.get("status")
     if status_filter:
@@ -36,7 +46,7 @@ def list_scans():
         query = query.limit(limit)
 
     scans = query.all()
-    return jsonify([s.to_dict() for s in scans])
+    return jsonify([s.to_dict(user_id=user_id, guest_session_id=guest_id) for s in scans])
 
 
 @api_bp.route("/scans", methods=["POST"])
@@ -64,6 +74,8 @@ def get_scan(scan_id: int):
     scan = db.query(Scan).filter_by(id=scan_id).first()
     if not scan:
         return jsonify({"error": "Scan Not Found", "scan_id": scan_id}), 404
+    if not check_scan_ownership(scan):
+        return jsonify({"error": "Access Denied", "message": "You do not have permission to access this scan."}), 403
     return jsonify(scan.to_dict())
 
 
@@ -75,6 +87,8 @@ def get_scan_findings(scan_id: int):
     scan = db.query(Scan).filter_by(id=scan_id).first()
     if not scan:
         return jsonify({"error": "Scan Not Found", "scan_id": scan_id}), 404
+    if not check_scan_ownership(scan):
+        return jsonify({"error": "Access Denied", "message": "You do not have permission to access findings for this scan."}), 403
 
     severity_filter = request.args.get("severity")
     query = db.query(Finding).filter_by(scan_id=scan.id)
@@ -106,6 +120,8 @@ def delete_scan(scan_id: int):
     scan = db.query(Scan).filter_by(id=scan_id).first()
     if not scan:
         return jsonify({"error": "Scan Not Found", "scan_id": scan_id}), 404
+    if not check_scan_ownership(scan):
+        return jsonify({"error": "Access Denied", "message": "You do not have permission to delete this scan."}), 403
 
     db.delete(scan)
     db.commit()

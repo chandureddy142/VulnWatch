@@ -91,7 +91,6 @@ def _mask_hostname(host: str) -> str:
     label = parts[label_idx]
     tld_suffix = "." + ".".join(parts[label_idx + 1:])
 
-    # Preserve subdomain prefix if present
     subdomain_prefix = ".".join(parts[:label_idx]) + "." if label_idx > 0 else ""
 
     return subdomain_prefix + _mask_label(label) + tld_suffix
@@ -100,9 +99,34 @@ def _mask_hostname(host: str) -> str:
 def _mask_label(label: str) -> str:
     """Mask a single hostname label: keep first 2 chars and last char, asterisk the rest."""
     if len(label) <= 3:
-        # Too short to meaningfully mask – keep first + asterisks for the rest
         return label[0] + "*" * (len(label) - 1)
     keep_start = min(2, len(label) - 1)
     keep_end = 1
     middle_len = len(label) - keep_start - keep_end
     return label[:keep_start] + "*" * middle_len + label[-keep_end:]
+
+
+def check_scan_ownership(scan, user_id=None, guest_session_id=None) -> bool:
+    """Check if the active user_id or guest_session_id owns the scan."""
+    if user_id is None and guest_session_id is None:
+        try:
+            from flask import session
+            user_id = session.get("user_id")
+            guest_session_id = session.get("guest_id") or session.get("guest_session_id")
+        except Exception:
+            pass
+
+    if scan.user_id is not None:
+        return user_id is not None and scan.user_id == user_id
+
+    if scan.guest_session_id is not None:
+        return guest_session_id is not None and scan.guest_session_id == guest_session_id
+
+    return True
+
+
+def mask_scan_target(scan, user_id=None, guest_session_id=None) -> str:
+    """Return scan's target_url, masked if the current session does not own the scan."""
+    is_owner = check_scan_ownership(scan, user_id=user_id, guest_session_id=guest_session_id)
+    return mask_domain(scan.target_url, is_owner)
+

@@ -2,8 +2,9 @@ import json
 import os
 import secrets
 import uuid
-from flask import Blueprint, jsonify, make_response, render_template, request, session
+from flask import Blueprint, jsonify, make_response, redirect, render_template, request, session, url_for
 from services.auth import require_api_key
+from routes.auth import login_required
 
 settings_bp = Blueprint("settings", __name__, url_prefix="/settings")
 
@@ -43,16 +44,18 @@ def save_settings(data: dict) -> None:
 
 
 @settings_bp.route("/", methods=["GET"])
+@login_required
 def settings_page():
-    """Render the enterprise settings configuration page."""
+    """Render the enterprise settings configuration page (authenticated users only)."""
     settings = load_settings()
     return render_template("settings.html", settings=settings)
 
 
 @settings_bp.route("/", methods=["POST"])
+@login_required
 @require_api_key
 def save_settings_route():
-    """Save updated settings from the settings form."""
+    """Save updated settings from the settings form (authenticated users only)."""
     if request.is_json:
         data = request.get_json() or {}
     else:
@@ -99,8 +102,16 @@ def save_settings_route():
 
 
 @settings_bp.route("/generate-api-key", methods=["POST"])
+@login_required
 def generate_api_key():
-    """Generate and persist a new random API key."""
+    """Generate and persist a new random API key (authenticated users only)."""
+    # JSON/API callers that somehow bypass login_required get a structured 401
+    if request.is_json and not session.get("user_id"):
+        return jsonify({
+            "error": "Authentication required.",
+            "message": "Sign in with Google to generate API keys.",
+            "redirect": url_for("auth.login", reason="settings", _external=False),
+        }), 401
     settings = load_settings()
     new_key = f"wg_{secrets.token_hex(24)}"
     settings["api_key"] = new_key

@@ -12,6 +12,8 @@ from services.notifier import dispatch_webhook
 from services.auth import require_api_key
 from routes.settings import load_settings
 
+from utils.privacy import check_scan_ownership
+
 scanner_bp = Blueprint("scanner", __name__)
 
 
@@ -20,11 +22,18 @@ def scanner_form():
     """Render the scan target configuration form."""
     db = get_session()
     cleanup_stale_scans(db, max_age_seconds=120)
-    active_count = (
-        db.query(Scan)
-        .filter(Scan.status.in_([ScanStatus.RUNNING, ScanStatus.PENDING]))
-        .count()
-    )
+    user_id = session.get("user_id")
+    guest_id = session.get("guest_id") or session.get("guest_session_id")
+
+    query = db.query(Scan).filter(Scan.status.in_([ScanStatus.RUNNING, ScanStatus.PENDING]))
+    if user_id:
+        query = query.filter(Scan.user_id == user_id)
+    elif guest_id:
+        query = query.filter(Scan.guest_session_id == guest_id)
+    else:
+        query = query.filter(False)
+
+    active_count = query.count()
     return render_template("scanner.html", active_scan_count=active_count)
 
 
@@ -34,13 +43,19 @@ def get_active_queue():
     """Retrieve list of running or pending scans for status polling."""
     db = get_session()
     cleanup_stale_scans(db, max_age_seconds=120)
-    active_scans = (
-        db.query(Scan)
-        .filter(Scan.status.in_([ScanStatus.RUNNING, ScanStatus.PENDING]))
-        .order_by(Scan.started_at.desc())
-        .all()
-    )
-    return jsonify([s.to_dict() for s in active_scans])
+    user_id = session.get("user_id")
+    guest_id = session.get("guest_id") or session.get("guest_session_id")
+
+    query = db.query(Scan).filter(Scan.status.in_([ScanStatus.RUNNING, ScanStatus.PENDING]))
+    if user_id:
+        query = query.filter(Scan.user_id == user_id)
+    elif guest_id:
+        query = query.filter(Scan.guest_session_id == guest_id)
+    else:
+        query = query.filter(False)
+
+    active_scans = query.order_by(Scan.started_at.desc()).all()
+    return jsonify([s.to_dict(user_id=user_id, guest_session_id=guest_id) for s in active_scans])
 
 
 
@@ -98,12 +113,16 @@ def trigger_scan():
         guest_limit = current_app.config.get("GUEST_SCAN_LIMIT", 3)
         guest_count = db.query(Scan).filter_by(guest_session_id=guest_session_id).count()
         if guest_count >= guest_limit:
+            if not request.is_json:
+                # Browser form-POST: redirect directly to login page
+                return redirect(url_for("auth.login", reason="quota"))
             return (
                 jsonify(
                     {
                         "error": f"Guest limit reached ({guest_count}/{guest_limit} scans). "
                                  "Please sign in with Google to continue.",
                         "limit_reached": True,
+                        "redirect": url_for("auth.login", reason="quota", _external=False),
                     }
                 ),
                 403,
@@ -260,12 +279,15 @@ def trigger_batch_scan():
         guest_count = db_sess.query(Scan).filter_by(guest_session_id=guest_session_id).count()
         remaining = guest_limit - guest_count
         if remaining <= 0:
+            if not request.is_json:
+                return redirect(url_for("auth.login", reason="quota"))
             return (
                 jsonify(
                     {
                         "error": f"Guest limit reached ({guest_count}/{guest_limit} scans). "
                                  "Please sign in with Google to continue.",
                         "limit_reached": True,
+                        "redirect": url_for("auth.login", reason="quota", _external=False),
                     }
                 ),
                 403,
@@ -400,6 +422,9 @@ def view_batch_results():
 
     if not scans_models:
         return jsonify({"error": "No scans found for specified batch IDs"}), 404
+
+    if any(not check_scan_ownership(scan) for scan in scans_models):
+        return jsonify({"error": "Access Denied", "message": "You do not have permission to view batch results for these scans."}), 403
 
     total_targets = len(scans_models)
     scans_data = []

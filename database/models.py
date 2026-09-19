@@ -113,10 +113,16 @@ class Scan(Base):
         self.low_count = counts[SeverityLevel.LOW]
         self.info_count = counts[SeverityLevel.INFO]
 
-    def to_dict(self):
+    def to_dict(self, user_id=None, guest_session_id=None, mask_unowned=True):
+        if mask_unowned:
+            from utils.privacy import mask_scan_target
+            target = mask_scan_target(self, user_id=user_id, guest_session_id=guest_session_id)
+        else:
+            target = self.target_url
+
         return {
             "id": self.id,
-            "target_url": self.target_url,
+            "target_url": target,
             "status": self.status.value if self.status else None,
             "started_at": self.started_at.isoformat() if self.started_at else None,
             "completed_at": self.completed_at.isoformat()

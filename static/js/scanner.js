@@ -289,12 +289,25 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(function (response) {
                 return response.json().then(function (data) {
                     if (!response.ok) {
+                        // Guest quota enforcement: redirect to login
+                        if (data.limit_reached && data.redirect) {
+                            appendLog('[-] Guest scan quota reached. Redirecting to sign-in...', 'warn');
+                            if (window.showToast) {
+                                window.showToast('Guest limit reached. Please sign in to continue.', 'warning', 5000);
+                            }
+                            setTimeout(function () {
+                                window.location.href = data.redirect;
+                            }, 1200);
+                            // Return a sentinel so the .then chain does not fire
+                            return null;
+                        }
                         throw new Error(data.message || data.error || 'Scan request failed.');
                     }
                     return data;
                 });
             })
             .then(function (data) {
+                if (!data) return; // quota redirect in progress
                 appendLog('[+] Audit complete. Processing security findings...', 'success');
                 appendLog(`[+] Discovered ${data.scan.findings_count} finding(s). Posture Score: ${data.posture_score}/100`, 'success');
 
@@ -355,12 +368,24 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(function (response) {
                 return response.json().then(function (data) {
                     if (!response.ok) {
+                        // Guest quota enforcement: redirect to login
+                        if (data.limit_reached && data.redirect) {
+                            appendLog('[-] Guest scan quota reached. Redirecting to sign-in...', 'warn');
+                            if (window.showToast) {
+                                window.showToast('Guest limit reached. Please sign in to continue.', 'warning', 5000);
+                            }
+                            setTimeout(function () {
+                                window.location.href = data.redirect;
+                            }, 1200);
+                            return null;
+                        }
                         throw new Error(data.message || data.error || 'Batch scan request failed.');
                     }
                     return data;
                 });
             })
             .then(function (data) {
+                if (!data) return; // quota redirect in progress
                 appendLog(`[+] Batch audit complete! Executed ${data.results.length} scan(s).`, 'success');
                 if (data.errors && data.errors.length > 0) {
                     appendLog(`[-] ${data.errors.length} target(s) returned errors.`, 'error');

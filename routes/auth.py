@@ -15,6 +15,7 @@ from flask import (
     Blueprint,
     current_app,
     flash,
+    jsonify,
     redirect,
     render_template,
     request,
@@ -69,13 +70,41 @@ def _current_user():
 
 
 def login_required(view):
-    """Decorator that redirects to /auth/login if user is not authenticated."""
+    """Decorator that redirects to /auth/login if user is not authenticated.
+
+    For JSON/API callers (Accept: application/json or Content-Type: application/json)
+    returns a 401 JSON payload with a ``redirect`` key instead of a 302 redirect.
+    Passes an optional ``reason`` query parameter through to the login URL so the
+    login page can show a contextual notice.
+    """
     from functools import wraps
 
     @wraps(view)
     def wrapped(*args, **kwargs):
         if not session.get("user_id"):
-            return redirect(url_for("auth.login", next=request.path))
+            # Derive reason from the view's route rule (e.g. /settings/ → 'settings')
+            reason = request.args.get("reason", "")
+            # Infer reason from path if not explicit
+            if not reason and request.path.startswith("/settings"):
+                reason = "settings"
+
+            login_url = url_for("auth.login", next=request.path,
+                                **({} if not reason else {"reason": reason}))
+
+            is_api = (
+                request.is_json
+                or request.headers.get("Accept", "") == "application/json"
+                or request.headers.get("X-API-Key")
+                or request.headers.get("Authorization")
+            )
+            if is_api:
+                return jsonify({
+                    "error": "Authentication required.",
+                    "message": "Sign in with Google to access this resource.",
+                    "redirect": login_url,
+                }), 401
+
+            return redirect(login_url)
         return view(*args, **kwargs)
 
     return wrapped

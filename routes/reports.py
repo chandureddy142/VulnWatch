@@ -8,6 +8,8 @@ from reports.pdf_report import generate_pdf_report
 from scanner.remediation_snippets import get_remediation_snippets
 from services.auth import require_api_key
 
+from utils.privacy import check_scan_ownership
+
 reports_bp = Blueprint("reports", __name__, url_prefix="/reports")
 
 
@@ -27,16 +29,17 @@ def _build_diff_map(current_scan: Scan) -> dict:
     and a list of resolved finding titles from the previous scan.
     """
     db = get_session()
-    prev_scan = (
-        db.query(Scan)
-        .filter(
-            Scan.target_url == current_scan.target_url,
-            Scan.id != current_scan.id,
-            Scan.status == ScanStatus.COMPLETED,
-        )
-        .order_by(Scan.started_at.desc())
-        .first()
+    query = db.query(Scan).filter(
+        Scan.target_url == current_scan.target_url,
+        Scan.id != current_scan.id,
+        Scan.status == ScanStatus.COMPLETED,
     )
+    if current_scan.user_id:
+        query = query.filter(Scan.user_id == current_scan.user_id)
+    elif current_scan.guest_session_id:
+        query = query.filter(Scan.guest_session_id == current_scan.guest_session_id)
+
+    prev_scan = query.order_by(Scan.started_at.desc()).first()
 
     if not prev_scan:
         return {
@@ -75,6 +78,17 @@ def view_report(scan_id: int):
     if not scan:
         return jsonify({"error": "Scan Not Found", "scan_id": scan_id}), 404
 
+    if not check_scan_ownership(scan):
+        return (
+            jsonify(
+                {
+                    "error": "Access Denied",
+                    "message": "You do not have permission to view this report.",
+                }
+            ),
+            403,
+        )
+
     diff_data = _build_diff_map(scan)
     finding_snippets = {
         f.id: get_remediation_snippets(f.category, f.title) for f in scan.findings
@@ -95,6 +109,17 @@ def update_finding_triage(scan_id: int, finding_id: int):
     finding = db.query(Finding).filter_by(id=finding_id, scan_id=scan_id).first()
     if not finding:
         return jsonify({"error": "Finding Not Found"}), 404
+
+    if not check_scan_ownership(finding.scan):
+        return (
+            jsonify(
+                {
+                    "error": "Access Denied",
+                    "message": "You do not have permission to triage findings for this scan.",
+                }
+            ),
+            403,
+        )
 
     data = request.get_json() or {}
 
@@ -126,6 +151,17 @@ def download_html_report(scan_id: int):
     if not scan:
         return jsonify({"error": "Scan Not Found", "scan_id": scan_id}), 404
 
+    if not check_scan_ownership(scan):
+        return (
+            jsonify(
+                {
+                    "error": "Access Denied",
+                    "message": "You do not have permission to download this report.",
+                }
+            ),
+            403,
+        )
+
     reports_dir = _get_reports_dir()
     html_path = os.path.join(reports_dir, f"scan_{scan.id}.html")
 
@@ -143,6 +179,17 @@ def download_json_report(scan_id: int):
     scan = db.query(Scan).filter_by(id=scan_id).first()
     if not scan:
         return jsonify({"error": "Scan Not Found", "scan_id": scan_id}), 404
+
+    if not check_scan_ownership(scan):
+        return (
+            jsonify(
+                {
+                    "error": "Access Denied",
+                    "message": "You do not have permission to download this report.",
+                }
+            ),
+            403,
+        )
 
     reports_dir = _get_reports_dir()
     json_path = os.path.join(reports_dir, f"scan_{scan.id}.json")
@@ -166,6 +213,17 @@ def download_pdf_report(scan_id: int):
     scan = db.query(Scan).filter_by(id=scan_id).first()
     if not scan:
         return jsonify({"error": "Scan Not Found", "scan_id": scan_id}), 404
+
+    if not check_scan_ownership(scan):
+        return (
+            jsonify(
+                {
+                    "error": "Access Denied",
+                    "message": "You do not have permission to download this report.",
+                }
+            ),
+            403,
+        )
 
     reports_dir = _get_reports_dir()
     pdf_path = os.path.join(reports_dir, f"scan_{scan.id}.pdf")

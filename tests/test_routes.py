@@ -30,6 +30,10 @@ def test_dashboard_route(app_client):
 
 
 def test_settings_routes(app_client):
+    with app_client.session_transaction() as sess:
+        sess["user_id"] = 1
+        sess["user"] = {"id": 1, "email": "test@test.com", "name": "Test", "picture": ""}
+
     # GET settings page
     res_get = app_client.get("/settings/", headers=API_HEADERS)
     assert res_get.status_code == 200
@@ -281,5 +285,130 @@ def test_guest_quota_enforcement(app_client):
         data = res.get_json()
         assert data.get("limit_reached") is True
         assert "Guest limit reached" in data.get("error", "")
+        # Quota response now includes a redirect key
+        assert "redirect" in data
+        assert "/auth/login" in data["redirect"]
 
+
+def test_settings_page_blocked_for_guests(app_client):
+    """GET /settings/ redirects unauthenticated users to /auth/login."""
+    res = app_client.get("/settings/")
+    assert res.status_code in (301, 302, 303)
+    location = res.headers.get("Location", "")
+    assert "/auth/login" in location
+    # Should also carry reason=settings for the contextual notice
+    assert "reason=settings" in location or "next=%2Fsettings" in location
+
+
+def test_settings_generate_api_key_blocked_for_api_guests(app_client):
+    """POST /settings/generate-api-key returns 401 JSON for unauthenticated API callers."""
+    res = app_client.post(
+        "/settings/generate-api-key",
+        headers={"Content-Type": "application/json", "Accept": "application/json"},
+        json={},
+    )
+    # login_required fires before the route handler
+    assert res.status_code in (401,)
+    data = res.get_json()
+    assert data is not None
+    assert "redirect" in data
+    assert "/auth/login" in data["redirect"]
+
+
+def test_settings_page_accessible_for_authenticated_user(app_client):
+    """GET /settings/ succeeds (200) for an authenticated user."""
+    with app_client.session_transaction() as sess:
+        sess["user_id"] = 1
+        sess["user"] = {"id": 1, "email": "test@test.com", "name": "Test", "picture": ""}
+
+    res = app_client.get("/settings/")
+    assert res.status_code == 200
+    assert b"Platform Settings" in res.data
+
+
+def test_dashboard_multi_tenant_isolation(app_client):
+    """Verify Dashboard filters scans to active user/guest and displays zero-state for new visitors."""
+    from database.db import get_session
+    from database.models import Scan, ScanStatus
+
+    db = get_session()
+
+    # Create test scans owned by User 1, User 2, and Guest A
+    user1_scan = Scan(
+        target_url="http://user1-target.com",
+        status=ScanStatus.COMPLETED,
+        user_id=101,
+    )
+    user2_scan = Scan(
+        target_url="http://user2-target.com",
+        status=ScanStatus.COMPLETED,
+        user_id=102,
+    )
+    guest_scan = Scan(
+        target_url="http://guest-target.com",
+        status=ScanStatus.COMPLETED,
+        guest_session_id="guest-uuid-777",
+    )
+    db.add_all([user1_scan, user2_scan, guest_scan])
+    db.commit()
+
+    u1_id = user1_scan.id
+    u2_id = user2_scan.id
+    g_id = guest_scan.id
+
+    # 1. User 1 Dashboard view
+    with app_client.session_transaction() as sess:
+        sess.clear()
+        sess["user_id"] = 101
+    res_u1 = app_client.get("/dashboard?format=json")
+    data_u1 = res_u1.get_json()
+    assert data_u1["total_scans"] == 1
+    assert data_u1["recent_scans"][0]["id"] == u1_id
+
+    # 2. Guest A Dashboard view
+    with app_client.session_transaction() as sess:
+        sess.clear()
+        sess["guest_id"] = "guest-uuid-777"
+    res_g = app_client.get("/dashboard?format=json")
+    data_g = res_g.get_json()
+    assert data_g["total_scans"] == 1
+    assert data_g["recent_scans"][0]["id"] == g_id
+
+    # 3. Brand new visitor (no session) Dashboard view
+    with app_client.session_transaction() as sess:
+        sess.clear()
+    res_new = app_client.get("/dashboard?format=json")
+    data_new = res_new.get_json()
+    assert data_new["total_scans"] == 0
+    assert len(data_new["recent_scans"]) == 0
+
+
+def test_report_ownership_enforcement(app_client):
+    """Verify unauthorized users receive 403 on another tenant's report view and download endpoints."""
+    from database.db import get_session
+    from database.models import Scan, ScanStatus
+
+    db = get_session()
+    owner_scan = Scan(
+        target_url="http://private-owner-site.com",
+        status=ScanStatus.COMPLETED,
+        user_id=888,
+    )
+    db.add(owner_scan)
+    db.commit()
+    target_scan_id = owner_scan.id
+
+    # Attempt access as a different user (User 999)
+    with app_client.session_transaction() as sess:
+        sess.clear()
+        sess["user_id"] = 999
+
+    res_html_view = app_client.get(f"/reports/{target_scan_id}", headers=API_HEADERS)
+    assert res_html_view.status_code == 403
+
+    res_json_dl = app_client.get(f"/reports/{target_scan_id}/json", headers=API_HEADERS)
+    assert res_json_dl.status_code == 403
+
+    res_pdf_dl = app_client.get(f"/reports/{target_scan_id}/pdf", headers=API_HEADERS)
+    assert res_pdf_dl.status_code == 403
 
