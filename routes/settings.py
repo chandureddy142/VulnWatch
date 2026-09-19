@@ -2,7 +2,7 @@ import json
 import os
 import secrets
 import uuid
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, jsonify, make_response, render_template, request, session
 from services.auth import require_api_key
 
 settings_bp = Blueprint("settings", __name__, url_prefix="/settings")
@@ -80,11 +80,22 @@ def save_settings_route():
 
     save_settings(settings)
 
-    if request.is_json:
-        return jsonify({"message": "Settings saved successfully.", "settings": settings})
+    # Persist the current API key to session and cookie
+    current_key = settings.get("api_key", "")
+    if current_key:
+        session["api_key"] = current_key
 
-    # Reload page with success feedback via query string (picked up by JS toast)
-    return jsonify({"message": "Settings saved successfully.", "settings": settings})
+    response = make_response(jsonify({"message": "Settings saved successfully.", "settings": settings}))
+    if current_key:
+        response.set_cookie(
+            "api_key",
+            current_key,
+            max_age=60 * 60 * 24 * 30,  # 30 days
+            httponly=True,
+            samesite="Lax",
+        )
+
+    return response
 
 
 @settings_bp.route("/generate-api-key", methods=["POST"])
@@ -94,4 +105,22 @@ def generate_api_key():
     new_key = f"wg_{secrets.token_hex(24)}"
     settings["api_key"] = new_key
     save_settings(settings)
-    return jsonify({"api_key": new_key})
+
+    # Bind new key directly to current browser session
+    session["api_key"] = new_key
+
+    response = make_response(jsonify({
+        "status": "success",
+        "api_key": new_key,
+        "key": new_key
+    }))
+    
+    # Bind new key as HTTP-only cookie
+    response.set_cookie(
+        "api_key",
+        new_key,
+        max_age=60 * 60 * 24 * 30,  # 30 days
+        httponly=True,
+        samesite="Lax",
+    )
+    return response
