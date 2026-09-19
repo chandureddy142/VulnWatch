@@ -141,10 +141,11 @@ def _enumerate_ct_subdomains(host: str, result: ReconResult, timeout: int) -> No
         return
 
     try:
-        api_url = f"https://crt.sh/?q=%25.{host}&output=json"
+        clean_domain = host.lower().lstrip("www.")
+        api_url = f"https://crt.sh/?q=%25.{clean_domain}&output=json"
         resp = requests.get(
             api_url,
-            timeout=(5, timeout),
+            timeout=(3, 5),
             headers={
                 "User-Agent": "VulnWatch-Auditor/1.0 (+https://yourdomain.com/security; contact: abuse@yourdomain.com)"
             },
@@ -155,12 +156,16 @@ def _enumerate_ct_subdomains(host: str, result: ReconResult, timeout: int) -> No
             entries = resp.json()
             seen = set()
             for entry in entries:
-                name_value = entry.get("name_value", "")
+                name_value = entry.get("name_value", "") or ""
                 for name in name_value.split("\n"):
                     name = name.strip().lower().lstrip("*.")
-                    if name and host in name and name not in seen:
+                    if name and clean_domain in name and name not in seen:
                         seen.add(name)
                         result.ct_subdomains.append(name)
+                        if len(result.ct_subdomains) >= 30:
+                            break
+                if len(result.ct_subdomains) >= 30:
+                    break
 
             if len(result.ct_subdomains) > 10:
                 result.findings.append(
@@ -268,7 +273,7 @@ def _audit_dns_security(host: str, target_url: str, result: ReconResult) -> None
         else:
             result.findings.append(
                 RawFinding(
-                    title="Missing DMARC Record — Email Spoofing Risk",
+                    title="Missing DMARC Policy — Anti-Phishing Risk",
                     category="DNS Security",
                     severity=SeverityLevel.MEDIUM,
                     description=(

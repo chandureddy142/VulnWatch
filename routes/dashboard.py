@@ -47,6 +47,7 @@ def index():
         or session.get("guest_id", "")
         or session.get("guest_session_id", "")
     )
+    is_anonymous = not user_id and not guest_id
 
     # ── Tier isolation ───────────────────────────────────────────────────────
     # Tier 3 (Google auth): own scans only, fully unmasked
@@ -90,10 +91,44 @@ def index():
         posture_score = 100  # No audits yet — default to clean slate
     posture_tier = _score_tier(posture_score)
 
+    # Calculate global platform volume stats for anonymous public landing view
+    global_total_audits = db.query(Scan).filter(Scan.status == ScanStatus.COMPLETED).count()
+    global_total_findings = db.query(Finding).count()
+    global_completed_scans = db.query(Scan).filter(Scan.status == ScanStatus.COMPLETED).all()
+    if global_completed_scans:
+        global_scores = [
+            _compute_posture_score(s.critical_count, s.high_count, s.medium_count, s.low_count)
+            for s in global_completed_scans
+        ]
+        global_avg_posture = round(sum(global_scores) / len(global_scores))
+    else:
+        global_avg_posture = 95
+    global_posture_tier = _score_tier(global_avg_posture)
+
+    # Public masked history feed for Tier 1 anonymous visitors (HTML view)
+    if is_anonymous:
+        public_scans_models = (
+            db.query(Scan)
+            .filter(Scan.status == ScanStatus.COMPLETED)
+            .order_by(Scan.started_at.desc())
+            .limit(20)
+            .all()
+        )
+        public_recent_scans = []
+        for s in public_scans_models:
+            d = s.to_dict(user_id=None, guest_session_id=None)
+            d["target_url"] = mask_domain(s.target_url, False)
+            d["id"] = None
+            d["recurrence"] = 1
+            public_recent_scans.append(d)
+    else:
+        public_recent_scans = []
+
     # 30-day daily scan volume for sparkline
     thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    sparkline_query = db.query(Scan) if is_anonymous else base_query
     recent_all = (
-        base_query.filter(Scan.started_at >= thirty_days_ago)
+        sparkline_query.filter(Scan.started_at >= thirty_days_ago)
         .order_by(Scan.started_at.asc())
         .all()
     )
@@ -135,14 +170,11 @@ def index():
             latest_scan.medium_count,
             latest_scan.low_count,
         )
-        # For Tier 1 (anonymous): viewer_owns_all is False → always mask
-        # For Tier 2/3 (guest / Google): viewer_owns_all is True → show real domain
         show_real = viewer_owns_all
         asset_inventory.append({
             "hostname": mask_domain(host, show_real),
             "scan_count": len(scans_list),
             "last_scanned_at": latest_scan.started_at.strftime("%Y-%m-%d %H:%M"),
-            # Hide scan ID for anonymous visitors so they can't enumerate reports
             "latest_scan_id": latest_scan.id if viewer_owns_all else None,
             "latest_status_code": latest_scan.status_code or "N/A",
             "latest_posture_score": latest_score,
@@ -159,13 +191,11 @@ def index():
     )
     recent_scans = []
     for s in recent_scans_models:
-        # Pass None for both IDs when Tier 1 so to_dict() masks the target
         d = s.to_dict(
             user_id=user_id if viewer_owns_all else None,
             guest_session_id=guest_id if viewer_owns_all else None,
         )
         d["recurrence"] = target_freq.get(s.target_url, 1)
-        # Tier 1: hide the scan ID so anonymous visitors can't navigate to reports
         if not viewer_owns_all:
             d["id"] = None
         recent_scans.append(d)
@@ -188,11 +218,16 @@ def index():
 
     return render_template(
         "dashboard.html",
+        is_anonymous=is_anonymous,
         total_scans=total_scans,
         totals=totals,
-        recent_scans=recent_scans,
+        recent_scans=recent_scans if not is_anonymous else public_recent_scans,
         posture_score=posture_score,
         posture_tier=posture_tier,
         sparkline_data=sparkline_data,
         asset_inventory=asset_inventory,
+        global_total_audits=global_total_audits,
+        global_total_findings=global_total_findings,
+        global_avg_posture=global_avg_posture,
+        global_posture_tier=global_posture_tier,
     )

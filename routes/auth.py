@@ -225,9 +225,13 @@ def callback():
         or session.get("guest_id", "")
     )
     if guest_id:
-        db.query(Scan).filter_by(guest_session_id=guest_id).update(
-            {"user_id": user.id, "guest_session_id": None}
+        unowned_scans = (
+            db.query(Scan)
+            .filter_by(guest_session_id=guest_id, user_id=None)
+            .all()
         )
+        for scan in unowned_scans:
+            scan.user_id = user.id
         db.commit()
 
     # Establish authenticated session — clear any guest markers

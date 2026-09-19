@@ -169,7 +169,7 @@ class ScanEngine:
                         scan.response_headers = {}
                     scan.response_headers["_recon"] = {
                         "ct_subdomain_count": len(recon_result.ct_subdomains),
-                        "ct_subdomains": recon_result.ct_subdomains[:20],
+                        "ct_subdomains": recon_result.ct_subdomains[:30],
                         "spf_record": recon_result.spf_record,
                         "dmarc_record": recon_result.dmarc_record,
                         "dkim_selectors_found": recon_result.dkim_selectors_found,

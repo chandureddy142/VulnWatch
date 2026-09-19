@@ -1,4 +1,6 @@
 import os
+import re
+from urllib.parse import urlparse
 from flask import Blueprint, current_app, jsonify, render_template, request, send_file, session
 from database.db import get_session
 from database.models import Finding, Scan, ScanStatus, TriageStatus
@@ -245,6 +247,7 @@ def download_json_report(scan_id: int):
     )
 
 
+@reports_bp.route("/<int:scan_id>/export/pdf", methods=["GET"])
 @reports_bp.route("/<int:scan_id>/pdf", methods=["GET"])
 def download_pdf_report(scan_id: int):
     """Download executive PDF assessment report.
@@ -273,9 +276,13 @@ def download_pdf_report(scan_id: int):
     if not os.path.exists(pdf_path):
         generate_pdf_report(scan, pdf_path)
 
+    clean_host = urlparse(scan.target_url).netloc or f"scan_{scan.id}"
+    clean_host = re.sub(r"[^\w\.-]", "_", clean_host)
+    filename = f"VulnWatch_Report_{clean_host}.pdf"
+
     return send_file(
         pdf_path,
         mimetype="application/pdf",
         as_attachment=True,
-        download_name=f"webguard_executive_report_{scan.id}.pdf",
+        download_name=filename,
     )
