@@ -52,11 +52,30 @@ def _resolve_guest_id():
 
 @scanner_bp.route("/scanner", methods=["GET"])
 def scanner_form():
-    """Render the scan target configuration form and establish guest device cookie."""
+    """Render the scan target configuration form.
+
+    Access tiers:
+      Tier 1 (anonymous): redirect to /auth/login?reason=audit_required
+      Tier 2 (guest): allow, show quota status
+      Tier 3 (Google): allow, show full UI
+    """
     db = get_session()
     cleanup_stale_scans(db, max_age_seconds=120)
     user_id = session.get("user_id")
 
+    # ── Tier 1 gate: anonymous visitor ──────────────────────────────────────
+    # Allow if: (a) authenticated Google user, OR
+    #           (b) session is_guest flag is set, OR
+    #           (c) a guest_device_id cookie already exists from a prior visit
+    is_google_user = bool(user_id)
+    is_guest_session = bool(session.get("is_guest"))
+    has_guest_cookie = bool(request.cookies.get("guest_device_id", "").strip())
+
+    if not is_google_user and not is_guest_session and not has_guest_cookie:
+        return redirect(url_for("auth.login", reason="audit_required",
+                                next=url_for("scanner.scanner_form")))
+
+    # ── Build active scan count for the progress indicator ──────────────────
     query = db.query(Scan).filter(Scan.status.in_([ScanStatus.RUNNING, ScanStatus.PENDING]))
     if user_id:
         query = query.filter(Scan.user_id == user_id)
@@ -67,7 +86,7 @@ def scanner_form():
     active_count = query.count()
     response = make_response(render_template("scanner.html", active_scan_count=active_count))
 
-    # Establish / refresh the persistent guest device cookie on page load
+    # Establish / refresh the persistent guest device cookie on every page load
     if not user_id:
         response.set_cookie(
             "guest_device_id",

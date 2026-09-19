@@ -899,7 +899,68 @@ textarea:focus {
   border-top: 1px solid var(--border);
 }
 
-/* Guest "Sign In" badge */
+/* ── Guest mode navbar group ─────────────────────────────────────────────── */
+
+/* Wrapper that holds the quota pill + sign-in button side-by-side */
+.guest-nav-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Quota pill: e.g. "Guest — 2 / 3 left" */
+.guest-quota-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  background: color-mix(in srgb, var(--brand) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand) 30%, transparent);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--brand);
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  user-select: none;
+}
+
+/* Pill turns amber when limit is reached */
+.guest-quota-badge--empty {
+  background: color-mix(in srgb, #f59e0b 12%, transparent);
+  border-color: color-mix(in srgb, #f59e0b 40%, transparent);
+  color: #b45309;
+}
+
+[data-theme="dark"] .guest-quota-badge--empty {
+  color: #fbbf24;
+  background: color-mix(in srgb, #f59e0b 15%, transparent);
+  border-color: color-mix(in srgb, #f59e0b 35%, transparent);
+}
+
+/* Compact "Sign In" call-to-action button */
+.nav-signin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.75rem;
+  background: var(--brand);
+  border: 1px solid var(--brand);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #ffffff;
+  text-decoration: none;
+  transition: background 0.18s, box-shadow 0.18s, opacity 0.18s;
+  white-space: nowrap;
+}
+.nav-signin-btn:hover {
+  background: color-mix(in srgb, var(--brand) 85%, #000);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--brand) 35%, transparent);
+  opacity: 0.95;
+}
+
+/* Legacy fallback — keep old .nav-guest-badge selector working */
 .nav-guest-badge {
   display: inline-flex;
   align-items: center;

@@ -72,6 +72,57 @@ def create_app(config_name: str = "default") -> Flask:
         app.logger.exception("Unhandled application error id=%s", error_id, exc_info=err)
         return jsonify({"error": "An internal error occurred.", "error_id": error_id}), 500
 
+    @app.context_processor
+    def inject_guest_context():
+        """Inject guest-mode quota state into every template context.
+
+        Tier determination:
+          Tier 3 (Google): session['user_id'] is set
+          Tier 2 (guest):  session['is_guest'] is True OR guest_device_id cookie present
+          Tier 1 (anon):   neither of the above
+        """
+        from flask import request as req, session as sess
+        try:
+            user_id = sess.get("user_id")
+            guest_scan_limit = app.config.get("GUEST_SCAN_LIMIT", 3)
+
+            # Tier 3
+            if user_id:
+                return {
+                    "is_guest": False,
+                    "guest_scans_left": guest_scan_limit,
+                    "guest_scan_limit": guest_scan_limit,
+                }
+
+            # Tier 2: explicit guest session OR returning visitor with cookie
+            guest_device_id = (
+                req.cookies.get("guest_device_id", "").strip()
+                or sess.get("guest_id", "")
+                or sess.get("guest_session_id", "")
+            )
+            is_guest = bool(sess.get("is_guest")) or bool(guest_device_id)
+
+            if is_guest and guest_device_id:
+                from database.db import get_session as _gs
+                from database.models import Scan as _Scan
+                db = _gs()
+                used = db.query(_Scan).filter_by(guest_session_id=guest_device_id).count()
+                guest_scans_left = max(0, guest_scan_limit - used)
+            else:
+                guest_scans_left = guest_scan_limit
+
+            return {
+                "is_guest": is_guest,
+                "guest_scans_left": guest_scans_left,
+                "guest_scan_limit": guest_scan_limit,
+            }
+        except Exception:
+            return {
+                "is_guest": False,
+                "guest_scans_left": 3,
+                "guest_scan_limit": 3,
+            }
+
     return app
 
 

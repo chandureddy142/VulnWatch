@@ -5,6 +5,7 @@ Provides:
   GET /auth/login      - Render login page
   GET /auth/google     - Initiate Google OAuth flow
   GET /auth/callback   - Handle OAuth token exchange & session setup
+  GET /auth/guest      - Set guest mode cookie & session, redirect to scanner
   GET /auth/logout     - Clear session and redirect home
   GET /profile         - Authenticated user profile & scan history
 """
@@ -117,17 +118,24 @@ def login_required(view):
 @auth_bp.route("/login")
 def login():
     """Render the VulnWatch login/sign-in page."""
-    # Already logged in? Send home
+    # Already logged in with Google? Send home
     if session.get("user_id"):
         return redirect(url_for("dashboard.index"))
+
+    # Already in guest mode? Send to scanner
+    if session.get("is_guest") and request.cookies.get("guest_device_id"):
+        return redirect(url_for("scanner.scanner_form"))
 
     oauth_available = bool(
         current_app.config.get("GOOGLE_CLIENT_ID")
         and current_app.config.get("GOOGLE_CLIENT_SECRET")
     )
 
-    # Determine current guest scan count for the badge
-    guest_id = session.get("guest_id")
+    # Determine current guest scan count — check persistent cookie first
+    guest_id = (
+        request.cookies.get("guest_device_id", "").strip()
+        or session.get("guest_id", "")
+    )
     guest_scan_count = 0
     if guest_id:
         db = get_session()
@@ -142,7 +150,8 @@ def login():
         oauth_available=oauth_available,
         guest_scan_count=guest_scan_count,
         guest_limit=guest_limit,
-        next=request.args.get("next", "/"),
+        next=request.args.get("next", "/scanner"),
+        reason=request.args.get("reason", ""),
     )
 
 
@@ -211,14 +220,17 @@ def callback():
     db.refresh(user)
 
     # Migrate guest scans to this user account
-    guest_id = session.get("guest_id")
+    guest_id = (
+        request.cookies.get("guest_device_id", "").strip()
+        or session.get("guest_id", "")
+    )
     if guest_id:
         db.query(Scan).filter_by(guest_session_id=guest_id).update(
             {"user_id": user.id, "guest_session_id": None}
         )
         db.commit()
 
-    # Establish authenticated session
+    # Establish authenticated session — clear any guest markers
     session.clear()
     session["user_id"] = user.id
     session["user"] = {
@@ -227,17 +239,65 @@ def callback():
         "name": user.name,
         "picture": user.picture,
     }
+    session["is_guest"] = False
     session.permanent = True
 
     next_url = request.args.get("next") or "/"
-    return redirect(next_url)
+    # Avoid redirecting back to the login or guest-entry pages
+    if next_url in ("/auth/login", "/auth/guest"):
+        next_url = "/"
+    response = redirect(next_url)
+    # Expire the guest cookie since the user is now authenticated
+    response.delete_cookie("guest_device_id")
+    return response
 
 
 @auth_bp.route("/logout")
 def logout():
     """Clear the session and redirect to the home page."""
+    response = redirect(url_for("dashboard.index"))
     session.clear()
-    return redirect(url_for("dashboard.index"))
+    response.delete_cookie("guest_device_id")
+    return response
+
+
+@auth_bp.route("/guest")
+def guest_entry():
+    """Set up guest mode: issue a 1-year persistent device cookie and mark the session.
+
+    Tier 2 entry point — called from the login page "Continue as Guest" button.
+    Redirects to /scanner (or the ``next`` param) so the user can start auditing.
+    """
+    # If already authenticated, send straight to dashboard
+    if session.get("user_id"):
+        return redirect(url_for("dashboard.index"))
+
+    # Resolve or create the persistent guest device ID
+    guest_device_id = request.cookies.get("guest_device_id", "").strip()
+    if not guest_device_id:
+        guest_device_id = str(uuid.uuid4())
+
+    # Store in session for server-side quota checks
+    session["is_guest"] = True
+    session["guest_id"] = guest_device_id
+    session.permanent = True
+
+    # Where to go after entering guest mode
+    next_url = request.args.get("next", "").strip()
+    # Avoid redirect loops
+    if not next_url or next_url in ("/auth/login", "/auth/guest"):
+        next_url = url_for("scanner.scanner_form")
+
+    response = redirect(next_url)
+    # Persistent 1-year cookie so quotas survive session expiry
+    response.set_cookie(
+        "guest_device_id",
+        guest_device_id,
+        max_age=60 * 60 * 24 * 365,
+        httponly=True,
+        samesite="Lax",
+    )
+    return response
 
 
 # ---------------------------------------------------------------------------

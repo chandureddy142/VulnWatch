@@ -1,5 +1,5 @@
 import os
-from flask import Blueprint, current_app, jsonify, render_template, request, send_file
+from flask import Blueprint, current_app, jsonify, render_template, request, send_file, session
 from database.db import get_session
 from database.models import Finding, Scan, ScanStatus, TriageStatus
 from reports.html_report import generate_html_report
@@ -19,6 +19,39 @@ def _get_reports_dir():
         reports_dir = os.path.join(current_app.root_path, "reports_output")
     os.makedirs(reports_dir, exist_ok=True)
     return reports_dir
+
+
+def _check_report_access(scan) -> bool:
+    """Return True if the current request session/cookie owns this scan.
+
+    Ownership rules (guest-friendly):
+    1. Authenticated Google user: ``session['user_id'] == scan.user_id``
+    2. Guest with persistent cookie: ``request.cookies['guest_device_id'] == scan.guest_session_id``
+    3. Guest with session key (legacy): ``session['guest_id'] == scan.guest_session_id``
+    4. Scan has no owner (no user_id and no guest_session_id) → allow (backwards compat)
+    """
+    # Scan has no recorded owner → accessible to everyone (legacy / admin scans)
+    if not scan.user_id and not scan.guest_session_id:
+        return True
+
+    user_id = session.get("user_id")
+    # Authenticated user
+    if user_id is not None:
+        if scan.user_id and scan.user_id == user_id:
+            return True
+        # Authenticated users cannot see other users' scans
+        return False
+
+    # Guest: check persistent cookie first, then session fallback
+    guest_device_id = (
+        request.cookies.get("guest_device_id", "").strip()
+        or session.get("guest_id", "")
+        or session.get("guest_session_id", "")
+    )
+    if scan.guest_session_id and guest_device_id:
+        return scan.guest_session_id == guest_device_id
+
+    return False
 
 
 def _build_diff_map(current_scan: Scan) -> dict:
@@ -70,15 +103,18 @@ def _build_diff_map(current_scan: Scan) -> dict:
 
 
 @reports_bp.route("/<int:scan_id>", methods=["GET"])
-@require_api_key
 def view_report(scan_id: int):
-    """Render interactive results view for a scan."""
+    """Render interactive results view for a scan.
+
+    Access control: ownership check only — no API key required.
+    Guests can view reports for their own scans (matched via guest_device_id cookie).
+    """
     db = get_session()
     scan = db.query(Scan).filter_by(id=scan_id).first()
     if not scan:
         return jsonify({"error": "Scan Not Found", "scan_id": scan_id}), 404
 
-    if not check_scan_ownership(scan):
+    if not _check_report_access(scan):
         return (
             jsonify(
                 {
@@ -110,7 +146,7 @@ def update_finding_triage(scan_id: int, finding_id: int):
     if not finding:
         return jsonify({"error": "Finding Not Found"}), 404
 
-    if not check_scan_ownership(finding.scan):
+    if not _check_report_access(finding.scan):
         return (
             jsonify(
                 {
@@ -143,15 +179,17 @@ def update_finding_triage(scan_id: int, finding_id: int):
 
 
 @reports_bp.route("/<int:scan_id>/html", methods=["GET"])
-@require_api_key
 def download_html_report(scan_id: int):
-    """Serve standalone static HTML report file."""
+    """Serve standalone static HTML report file.
+
+    Access control: ownership check only — guests can download their own reports.
+    """
     db = get_session()
     scan = db.query(Scan).filter_by(id=scan_id).first()
     if not scan:
         return jsonify({"error": "Scan Not Found", "scan_id": scan_id}), 404
 
-    if not check_scan_ownership(scan):
+    if not _check_report_access(scan):
         return (
             jsonify(
                 {
@@ -172,15 +210,17 @@ def download_html_report(scan_id: int):
 
 
 @reports_bp.route("/<int:scan_id>/json", methods=["GET"])
-@require_api_key
 def download_json_report(scan_id: int):
-    """Download scan findings as a JSON artifact."""
+    """Download scan findings as a JSON artifact.
+
+    Access control: ownership check only — guests can download their own reports.
+    """
     db = get_session()
     scan = db.query(Scan).filter_by(id=scan_id).first()
     if not scan:
         return jsonify({"error": "Scan Not Found", "scan_id": scan_id}), 404
 
-    if not check_scan_ownership(scan):
+    if not _check_report_access(scan):
         return (
             jsonify(
                 {
@@ -206,15 +246,17 @@ def download_json_report(scan_id: int):
 
 
 @reports_bp.route("/<int:scan_id>/pdf", methods=["GET"])
-@require_api_key
 def download_pdf_report(scan_id: int):
-    """Download executive PDF assessment report."""
+    """Download executive PDF assessment report.
+
+    Access control: ownership check only — guests can download their own reports.
+    """
     db = get_session()
     scan = db.query(Scan).filter_by(id=scan_id).first()
     if not scan:
         return jsonify({"error": "Scan Not Found", "scan_id": scan_id}), 404
 
-    if not check_scan_ownership(scan):
+    if not _check_report_access(scan):
         return (
             jsonify(
                 {

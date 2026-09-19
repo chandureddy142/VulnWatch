@@ -38,7 +38,7 @@
 
                 <nav class="nav-links" aria-label="Primary">
                     <a href="/" class="nav-link {% if request.path == '/' %}is-active{% endif %}">Dashboard</a>
-                    <a href="/scanner" class="nav-link {% if request.path == '/scanner' %}is-active{% endif %}">New Audit</a>
+                    <a href="/scanner" id="nav-new-audit" class="nav-link {% if request.path == '/scanner' %}is-active{% endif %}">New Audit</a>
                     <a href="{{ url_for('api.api_docs') }}" class="nav-link {% if request.path == '/api/docs' %}is-active{% endif %}">API Docs</a>
                 </nav>
 
@@ -72,8 +72,9 @@
                         {{ 'LOCAL ENV' if is_local else 'REMOTE HOST' }}
                     </span>
 
-                    <!-- Auth: user avatar dropdown or guest badge -->
+                    <!-- Auth: Tier 3 (Google) / Tier 2 (Guest) / Tier 1 (Anonymous) -->
                     {% if session.get('user') %}
+                        {# ── Tier 3: Google authenticated user ── #}
                         <div class="user-menu" id="user-menu">
                             <button class="user-avatar-btn" id="user-avatar-btn" aria-haspopup="true" aria-expanded="false" title="{{ session['user'].get('name', 'Account') }}">
                                 {% if session['user'].get('picture') %}
@@ -98,14 +99,33 @@
                                 <a href="/auth/logout" class="user-dropdown-item user-dropdown-item--danger">Sign Out</a>
                             </div>
                         </div>
+                    {% elif is_guest %}
+                        {# ── Tier 2: Guest mode — show quota pill + sign-in CTA ── #}
+                        <div class="guest-nav-group" role="group" aria-label="Guest session status">
+                            {% if guest_scans_left > 0 %}
+                                <span class="guest-quota-badge" title="Guest mode: {{ guest_scans_left }} of {{ guest_scan_limit }} free scans remaining">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                                    Guest&thinsp;&mdash;&thinsp;{{ guest_scans_left }}&thinsp;/&thinsp;{{ guest_scan_limit }} left
+                                </span>
+                            {% else %}
+                                <span class="guest-quota-badge guest-quota-badge--empty" title="Guest scan limit reached">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                    Guest&thinsp;&mdash;&thinsp;Limit Reached
+                                </span>
+                            {% endif %}
+                            <a href="/auth/login" class="nav-signin-btn" title="Sign in with Google for unlimited scans">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                                Sign In
+                            </a>
+                        </div>
                     {% else %}
-                        {% set guest_id = session.get('guest_id') %}
-                        {% set guest_limit = config.get('GUEST_SCAN_LIMIT', 3) if config is defined else 3 %}
-                        <a href="/auth/login" class="nav-guest-badge" title="Sign in to unlock unlimited scans">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                            <span>Sign In</span>
+                        {# ── Tier 1: Anonymous visitor — simple sign-in button ── #}
+                        <a href="/auth/login" class="nav-signin-btn nav-signin-btn--anon" id="nav-signin-anon" title="Sign in or continue as guest">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                            Sign In
                         </a>
                     {% endif %}
+
                 </div>
             </div>
         </header>
@@ -140,6 +160,31 @@
     </div>
 
     <!-- Global scripts -->
+    <!-- Guest Quota Exceeded Modal -->
+    <div id="quota-exceeded-overlay" class="interceptor-overlay" role="dialog" aria-modal="true" aria-labelledby="quota-exceeded-title">
+        <div class="interceptor-modal">
+            <div class="interceptor-header">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <h3 id="quota-exceeded-title">Guest Scan Limit Reached</h3>
+            </div>
+            <div class="interceptor-body">
+                <p>You have used all <strong>{{ guest_scan_limit }}</strong> free guest audits available for this device.</p>
+                <p>Sign in with Google to unlock <strong>unlimited security assessments</strong>, full report history, API access, and more.</p>
+            </div>
+            <div class="interceptor-actions">
+                <button type="button" id="quota-modal-close" class="btn btn-secondary">Not Now</button>
+                <a href="/auth/login" class="btn btn-primary">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                    Sign In with Google
+                </a>
+            </div>
+        </div>
+    </div>
+
     <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
     <script src="{{ url_for('static', filename='js/palette.js') }}"></script>
     <script>
@@ -174,7 +219,56 @@
                 avatarBtn.setAttribute('aria-expanded', 'false');
             });
         })();
+
+        // New Audit nav link: 3-tier access control
+        (function() {
+            var scansLeft = {{ guest_scans_left | tojson }};
+            var isGuest = {{ is_guest | tojson }};
+            var isGoogle = {{ (session.get('user_id') is not none) | tojson }};
+            var newAuditLink = document.getElementById('nav-new-audit');
+            var quotaOverlay = document.getElementById('quota-exceeded-overlay');
+            var quotaClose = document.getElementById('quota-modal-close');
+
+            if (!newAuditLink) return;
+
+            newAuditLink.addEventListener('click', function(e) {
+                // Tier 3: Google authenticated — always allow
+                if (isGoogle) return;
+
+                // Tier 1: Anonymous visitor — redirect to login
+                if (!isGuest) {
+                    e.preventDefault();
+                    window.location.href = '/auth/login?reason=audit_required&next=' + encodeURIComponent('/scanner');
+                    return;
+                }
+
+                // Tier 2: Guest with quota exhausted — show modal
+                if (scansLeft <= 0 && quotaOverlay) {
+                    e.preventDefault();
+                    quotaOverlay.classList.add('active');
+                }
+                // Tier 2: Guest with quota remaining — navigate normally
+            });
+
+            if (quotaClose && quotaOverlay) {
+                quotaClose.addEventListener('click', function() {
+                    quotaOverlay.classList.remove('active');
+                });
+            }
+
+            // Close modal on backdrop click
+            if (quotaOverlay) {
+                quotaOverlay.addEventListener('click', function(e) {
+                    if (e.target === quotaOverlay) {
+                        quotaOverlay.classList.remove('active');
+                    }
+                });
+            }
+
+            });
+        })();
     </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>
+

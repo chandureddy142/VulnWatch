@@ -285,8 +285,7 @@
 
         <div class="login-card-body">
 
-            {# ── Contextual redirect notice ── #}
-            {% set reason = request.args.get('reason', '') %}
+            {% set reason = reason or request.args.get('reason', '') %}
             {% if reason == 'settings' %}
             <div class="login-redirect-notice login-redirect-notice--info" role="alert" id="login-reason-notice">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -296,6 +295,11 @@
             <div class="login-redirect-notice login-redirect-notice--warn" role="alert" id="login-reason-notice">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 <span>Guest scan limit reached. Sign in to run <strong>unlimited audits</strong>.</span>
+            </div>
+            {% elif reason == 'audit_required' or reason == 'new_audit' %}
+            <div class="login-redirect-notice login-redirect-notice--info" role="alert" id="login-reason-notice">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                <span>Sign in or continue as guest to start a <strong>security audit</strong>.</span>
             </div>
             {% endif %}
 
@@ -339,7 +343,10 @@
 
             <div class="login-divider">or</div>
 
-            <a href="{{ next or '/' }}" class="btn-guest" id="guest-continue-btn">
+            {# Guest entry: go to /auth/guest which sets the cookie + session flag
+               and then redirects to /scanner (or the ``next`` param) #}
+            {% set guest_next = next if next else '/scanner' %}
+            <a href="/auth/guest?next={{ guest_next | urlencode }}" class="btn-guest" id="guest-continue-btn">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                     <circle cx="12" cy="7" r="4"/>
