@@ -59,9 +59,9 @@ def index():
         base_query = db.query(Scan).filter(Scan.guest_session_id == guest_id)
         viewer_owns_all = True
     else:
-        # Tier 1: public feed — recent completed scans, strictly masked
-        base_query = db.query(Scan).filter(Scan.status == ScanStatus.COMPLETED)
-        viewer_owns_all = False  # force masking for all results
+        # Tier 1: anonymous visitor (no user_id or guest_id) has no owned scans
+        base_query = db.query(Scan).filter(False)
+        viewer_owns_all = False
 
     total_scans = base_query.count()
 

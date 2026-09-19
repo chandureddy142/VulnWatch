@@ -183,9 +183,13 @@
         </div>
     </div>
 
-    <!-- Global scripts -->
-    <!-- Guest Quota Exceeded Modal -->
-    <div id="quota-exceeded-overlay" class="interceptor-overlay" role="dialog" aria-modal="true" aria-labelledby="quota-exceeded-title">
+    <!-- Guest Quota Exceeded Modal — only rendered when limit is truly reached -->
+    {# Never put this in the DOM when scans are still available; prevents
+       it becoming visible on pages that don't load scanner.css. #}
+    {% if is_guest and guest_scans_left <= 0 %}
+    <div id="quota-exceeded-overlay" class="interceptor-overlay"
+         role="dialog" aria-modal="true" aria-labelledby="quota-exceeded-title"
+         style="opacity:0;pointer-events:none">
         <div class="interceptor-modal">
             <div class="interceptor-header">
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -208,6 +212,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
 
     <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
     <script src="{{ url_for('static', filename='js/palette.js') }}"></script>
