@@ -118,9 +118,14 @@ def login_required(view):
 @auth_bp.route("/login")
 def login():
     """Render the VulnWatch login/sign-in page."""
-    # Already logged in with Google? Send home
+    next_url = request.args.get("next", "").strip()
+    if next_url and next_url not in ("/auth/login", "/auth/guest"):
+        session["next_url"] = next_url
+
+    # Already logged in with Google? Send to next destination or dashboard
     if session.get("user_id"):
-        return redirect(url_for("dashboard.index"))
+        target = next_url if (next_url and next_url not in ("/auth/login", "/auth/guest")) else url_for("dashboard.index")
+        return redirect(target)
 
     # NOTE: Do NOT redirect guests here — they may be clicking "Sign In with Google"
     # from the guest dropdown and need to see the actual sign-in page.
@@ -149,15 +154,18 @@ def login():
         oauth_available=oauth_available,
         guest_scan_count=guest_scan_count,
         guest_limit=guest_limit,
-        next=request.args.get("next", "/scanner"),
+        next=next_url or url_for("dashboard.index"),
         reason=request.args.get("reason", ""),
     )
-
 
 
 @auth_bp.route("/google")
 def google_login():
     """Initiate the Google OAuth 2.0 authorization code flow."""
+    next_url = request.args.get("next", "").strip()
+    if next_url and next_url not in ("/auth/login", "/auth/guest"):
+        session["next_url"] = next_url
+
     google = _get_or_create_oauth()
     if not google:
         flash("Google sign-in is not configured on this server.", "warning")
@@ -235,6 +243,11 @@ def callback():
         db.commit()
 
     # Establish authenticated session — clear any guest markers
+    next_destination = (
+        session.pop("next_url", None)
+        or request.args.get("next")
+        or url_for("dashboard.index")
+    )
     session.clear()
     session["user_id"] = user.id
     session["user"] = {
@@ -246,11 +259,10 @@ def callback():
     session["is_guest"] = False
     session.permanent = True
 
-    next_url = request.args.get("next") or "/"
-    # Avoid redirecting back to the login or guest-entry pages
-    if next_url in ("/auth/login", "/auth/guest"):
-        next_url = "/"
-    response = redirect(next_url)
+    if not next_destination or next_destination in ("/auth/login", "/auth/guest"):
+        next_destination = url_for("dashboard.index")
+
+    response = redirect(next_destination)
     # Expire the guest cookie since the user is now authenticated
     response.delete_cookie("guest_device_id")
     return response
@@ -270,7 +282,7 @@ def guest_entry():
     """Set up guest mode: issue a 1-year persistent device cookie and mark the session.
 
     Tier 2 entry point — called from the login page "Continue as Guest" button.
-    Redirects to /scanner (or the ``next`` param) so the user can start auditing.
+    Redirects to /dashboard (or the ``next`` param) so the user lands in their workspace.
     """
     # If already authenticated, send straight to dashboard
     if session.get("user_id"):
@@ -281,16 +293,21 @@ def guest_entry():
     if not guest_device_id:
         guest_device_id = str(uuid.uuid4())
 
+    # Where to go after entering guest mode
+    next_url = (
+        session.pop("next_url", None)
+        or request.args.get("next", "").strip()
+        or url_for("dashboard.index")
+    )
+
     # Store in session for server-side quota checks
     session["is_guest"] = True
     session["guest_id"] = guest_device_id
     session.permanent = True
 
-    # Where to go after entering guest mode
-    next_url = request.args.get("next", "").strip()
     # Avoid redirect loops
     if not next_url or next_url in ("/auth/login", "/auth/guest"):
-        next_url = url_for("scanner.scanner_form")
+        next_url = url_for("dashboard.index")
 
     response = redirect(next_url)
     # Persistent 1-year cookie so quotas survive session expiry

@@ -255,7 +255,7 @@
                         </span>
                     </td>
                     <td style="padding: 14px 20px; text-align: right;">
-                        <a href="{{ url_for('auth.login', reason='audit_required') }}" class="btn btn-sm btn-outline-secondary" style="display: inline-flex; align-items: center; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #334155; background: #ffffff; border: 1px solid #cbd5e1; text-decoration: none;">
+                        <a href="{{ url_for('reports.view_report', scan_id=scan.id) }}" class="btn btn-sm btn-outline-secondary" style="display: inline-flex; align-items: center; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #334155; background: #ffffff; border: 1px solid #cbd5e1; text-decoration: none;">
                             View Report
                         </a>
                     </td>

@@ -101,7 +101,7 @@ def home():
     for s in public_scans_models:
         d = s.to_dict(user_id=None, guest_session_id=None)
         d["target_url"] = mask_domain(s.target_url, False)
-        d["id"] = None
+        d["id"] = s.id
         d["posture_score"] = _compute_posture_score(
             s.critical_count, s.high_count, s.medium_count, s.low_count
         )

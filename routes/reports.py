@@ -1,7 +1,7 @@
 import os
 import re
 from urllib.parse import urlparse
-from flask import Blueprint, current_app, jsonify, render_template, request, send_file, session
+from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, send_file, session, url_for
 from database.db import get_session
 from database.models import Finding, Scan, ScanStatus, TriageStatus
 from reports.html_report import generate_html_report
@@ -108,24 +108,23 @@ def _build_diff_map(current_scan: Scan) -> dict:
 def view_report(scan_id: int):
     """Render interactive results view for a scan.
 
-    Access control: ownership check only — no API key required.
-    Guests can view reports for their own scans (matched via guest_device_id cookie).
+    Access control:
+    Step 1: If anonymous (neither Google user nor active guest), redirect to login preserving destination in `next`.
+    Step 2: If authenticated/guest, verify ownership. Rejection flashes permission warning and returns 403 redirect to dashboard.
     """
+    is_logged_in = bool(session.get("user_id"))
+    is_guest = bool(session.get("is_guest") or request.cookies.get("guest_device_id"))
+    if not is_logged_in and not is_guest:
+        return redirect(url_for("auth.login", next=request.url, reason="login_required"))
+
     db = get_session()
     scan = db.query(Scan).filter_by(id=scan_id).first()
     if not scan:
         return jsonify({"error": "Scan Not Found", "scan_id": scan_id}), 404
 
     if not _check_report_access(scan):
-        return (
-            jsonify(
-                {
-                    "error": "Access Denied",
-                    "message": "You do not have permission to view this report.",
-                }
-            ),
-            403,
-        )
+        flash("You do not have permission to view this confidential audit report.", "danger")
+        return redirect(url_for("dashboard.index")), 403
 
     diff_data = _build_diff_map(scan)
     finding_snippets = {
