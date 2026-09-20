@@ -23,188 +23,203 @@
   }
 }
 
-/* Card Base — Reactive Light & Dark Modes */
+/* ── INVERTED CONTRAST THEME SYSTEM ── */
+
+/* 1. Default (Light Mode Active): Containers are SLEEK DARK */
 .home-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: #0f172a;
+  border: 1px solid #1e293b;
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 .home-card:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-}
-
-[data-theme="dark"] .home-card {
-  background: #0f172a;
-  border-color: #1e293b;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
-}
-[data-theme="dark"] .home-card:hover {
   border-color: #334155;
   box-shadow: 0 8px 25px -4px rgba(0, 0, 0, 0.5);
 }
 
-/* Primary Headings & Subtitles */
+/* 2. Inverted: Dark Mode Active -> Containers switch to CRISP LIGHT SURFACE */
+.dark .home-card,
+[data-theme="dark"] .home-card {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+.dark .home-card:hover,
+[data-theme="dark"] .home-card:hover {
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Primary Headings & Main Metrics */
 .home-title {
-  color: #0f172a;
+  color: #f8fafc;
   transition: color 0.2s ease;
 }
+.dark .home-title,
 [data-theme="dark"] .home-title {
-  color: #f8fafc !important;
+  color: #0f172a !important;
 }
 
-.home-subtext {
-  color: #64748b;
+/* Secondary Labels & Subtext */
+.home-subtext, .home-label {
+  color: #94a3b8;
   transition: color 0.2s ease;
 }
-[data-theme="dark"] .home-subtext {
-  color: #94a3b8 !important;
-}
-
-.home-label {
-  color: #64748b;
-  transition: color 0.2s ease;
-}
-[data-theme="dark"] .home-label {
-  color: #94a3b8 !important;
+.dark .home-subtext, .dark .home-label,
+[data-theme="dark"] .home-subtext, [data-theme="dark"] .home-label {
+  color: #64748b !important;
 }
 
 /* Metric Gauge Ring Background */
 .gauge-ring-bg {
-  stroke: #e2e8f0;
+  stroke: #1e293b;
   transition: stroke 0.2s ease;
 }
+.dark .gauge-ring-bg,
 [data-theme="dark"] .gauge-ring-bg {
-  stroke: #1e293b;
+  stroke: #e2e8f0 !important;
 }
 
 /* Timeframe Pill */
 .home-pill {
-  background: #f1f5f9;
-  color: #475569;
-  border: 1px solid #e2e8f0;
-  transition: all 0.2s ease;
-}
-[data-theme="dark"] .home-pill {
   background: #1e293b;
   color: #cbd5e1;
-  border-color: #334155;
+  border: 1px solid #334155;
+  transition: all 0.2s ease;
+}
+.dark .home-pill,
+[data-theme="dark"] .home-pill {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  border-color: #e2e8f0 !important;
 }
 
 /* Telemetry Grid & Axes */
 .chart-grid-line {
-  stroke: #e2e8f0;
+  stroke: #1e293b;
   transition: stroke 0.2s ease;
 }
+.dark .chart-grid-line,
 [data-theme="dark"] .chart-grid-line {
-  stroke: #1e293b;
+  stroke: #e2e8f0 !important;
 }
 
 .chart-axis-text {
   color: #94a3b8;
   transition: color 0.2s ease;
 }
+.dark .chart-axis-text,
 [data-theme="dark"] .chart-axis-text {
-  color: #64748b;
+  color: #64748b !important;
 }
 
 .chart-wave-line {
-  stroke: #4f46e5;
+  stroke: #818cf8;
   transition: stroke 0.2s ease;
 }
+.dark .chart-wave-line,
 [data-theme="dark"] .chart-wave-line {
-  stroke: #818cf8;
+  stroke: #4f46e5 !important;
 }
 
 /* Table Header & Rows */
 .home-table-header {
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
+  background: #111827;
+  border-bottom: 1px solid #1e293b;
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
+.dark .home-table-header,
 [data-theme="dark"] .home-table-header {
-  background: #111827;
-  border-bottom-color: #1e293b;
+  background: #f8fafc !important;
+  border-bottom-color: #e2e8f0 !important;
 }
 
 .home-table-th {
-  color: #475569;
+  color: #94a3b8;
   transition: color 0.2s ease;
 }
+.dark .home-table-th,
 [data-theme="dark"] .home-table-th {
-  color: #94a3b8;
+  color: #475569 !important;
 }
 
 .home-table-row {
-  border-bottom: 1px solid #f1f5f9;
-  background: #ffffff;
+  border-bottom: 1px solid #1e293b;
+  background: #0f172a;
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 .home-table-row:nth-child(even) {
-  background: #f8fafc;
-}
-
-[data-theme="dark"] .home-table-row {
-  border-bottom-color: #1e293b;
-  background: #0f172a;
-}
-[data-theme="dark"] .home-table-row:nth-child(even) {
   background: #111827;
 }
 
+.dark .home-table-row,
+[data-theme="dark"] .home-table-row {
+  border-bottom-color: #f1f5f9 !important;
+  background: #ffffff !important;
+}
+.dark .home-table-row:nth-child(even),
+[data-theme="dark"] .home-table-row:nth-child(even) {
+  background: #f8fafc !important;
+}
+
 .home-target-text {
-  color: #1e293b;
+  color: #f8fafc;
   transition: color 0.2s ease;
 }
+.dark .home-target-text,
 [data-theme="dark"] .home-target-text {
-  color: #f8fafc;
+  color: #1e293b !important;
 }
 
 .home-action-btn {
-  color: #334155;
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
+  color: #f8fafc;
+  background: #1e293b;
+  border: 1px solid #334155;
   transition: all 0.2s ease;
 }
 .home-action-btn:hover {
-  background: #f8fafc;
-  border-color: #94a3b8;
-}
-[data-theme="dark"] .home-action-btn {
-  color: #f8fafc;
-  background: #1e293b;
-  border-color: #334155;
-}
-[data-theme="dark"] .home-action-btn:hover {
   background: #334155;
   border-color: #475569;
 }
-
-/* Architecture Cards Icon */
-.arch-icon-box {
-  background: #eff6ff;
-  color: #2563eb;
-  transition: all 0.2s ease;
+.dark .home-action-btn,
+[data-theme="dark"] .home-action-btn {
+  color: #334155 !important;
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
 }
-[data-theme="dark"] .arch-icon-box {
+.dark .home-action-btn:hover,
+[data-theme="dark"] .home-action-btn:hover {
+  background: #f8fafc !important;
+  border-color: #94a3b8 !important;
+}
+
+/* Architecture Cards Icon Box */
+.arch-icon-box {
   background: #1e293b;
   color: #38bdf8;
+  transition: all 0.2s ease;
+}
+.dark .arch-icon-box,
+[data-theme="dark"] .arch-icon-box {
+  background: #eff6ff !important;
+  color: #2563eb !important;
 }
 
 /* Hero Title Brand Styling */
 .brand-vuln-stroke {
-  color: #ffffff;
-  -webkit-text-stroke: 2px #0f172a;
-  text-shadow: 2px 2px 0px #0f172a;
+  color: #0f172a;
+  -webkit-text-stroke: 2px #f8fafc;
+  text-shadow: 2px 2px 0px #38bdf8;
   transition: all 0.2s ease;
 }
+.dark .brand-vuln-stroke,
 [data-theme="dark"] .brand-vuln-stroke {
-  color: #0f172a !important;
-  -webkit-text-stroke: 2px #f8fafc !important;
-  text-shadow: 2px 2px 0px #38bdf8 !important;
+  color: #ffffff !important;
+  -webkit-text-stroke: 2px #0f172a !important;
+  text-shadow: 2px 2px 0px #0f172a !important;
 }
 </style>
 {% endblock %}

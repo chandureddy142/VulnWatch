@@ -26,45 +26,45 @@
 <body>
     <div class="app-shell">
 
-        <header class="navbar bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 transition-colors duration-200 sticky top-0 z-50">
+        <header class="navbar bg-slate-900 border-b border-slate-800 sticky top-0 z-50 transition-colors duration-200" style="background-color: #0f172a !important; border-bottom-color: #1e293b !important;">
             <div class="container navbar-inner">
-                <a href="/" class="brand text-slate-900 dark:text-white transition-colors duration-200">
-                    <span class="brand-mark" aria-hidden="true">
+                <a href="/" class="brand text-white hover:text-slate-100 transition-colors duration-200">
+                    <span class="brand-mark bg-slate-800 border-slate-700 text-indigo-400" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                             <path d="m9 12 2 2 4-4"/>
                         </svg>
                     </span>
                     <span>
-                        VulnWatch
-                        <small class="text-slate-500 dark:text-slate-400">PASSIVE VAPT &amp; ATTACK SURFACE INTELLIGENCE</small>
+                        <span class="text-white font-bold">VulnWatch</span>
+                        <small class="text-slate-400 font-medium">PASSIVE VAPT &amp; ATTACK SURFACE INTELLIGENCE</small>
                     </span>
                 </a>
 
                 <nav class="nav-links" aria-label="Primary">
                     {% if session.get('user') or session.get('user_id') or is_guest %}
-                    <a href="/dashboard" class="nav-link text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors duration-200 {% if request.path == '/dashboard' %}is-active{% endif %}">Dashboard</a>
+                    <a href="/dashboard" class="nav-link text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors duration-200 {% if request.path == '/dashboard' %}is-active text-indigo-400 bg-slate-800/90{% endif %}">Dashboard</a>
                     {% endif %}
-                    <a href="/scanner" id="nav-new-audit" class="nav-link text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors duration-200 {% if request.path == '/scanner' %}is-active{% endif %}">New Audit</a>
-                    <a href="{{ url_for('api.api_docs') }}" class="nav-link text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors duration-200 {% if request.path == '/api/docs' %}is-active{% endif %}">API Docs</a>
+                    <a href="/scanner" id="nav-new-audit" class="nav-link text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors duration-200 {% if request.path == '/scanner' %}is-active text-indigo-400 bg-slate-800/90{% endif %}">New Audit</a>
+                    <a href="{{ url_for('api.api_docs') }}" class="nav-link text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors duration-200 {% if request.path == '/api/docs' %}is-active text-indigo-400 bg-slate-800/90{% endif %}">API Docs</a>
                 </nav>
 
                 <div class="nav-right">
                     <!-- Command Palette trigger -->
-                    <button class="palette-trigger text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors duration-200" id="palette-btn" data-palette-open aria-label="Open command palette" title="Quick navigation (Ctrl+K)">
+                    <button class="palette-trigger text-slate-300 bg-slate-800/80 border border-slate-700 hover:bg-slate-700 hover:text-white transition-colors duration-200" id="palette-btn" data-palette-open aria-label="Open command palette" title="Quick navigation (Ctrl+K)">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                        <span class="palette-trigger-label">Search</span>
-                        <kbd class="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">⌘K</kbd>
+                        <span class="palette-trigger-label text-slate-300">Search</span>
+                        <kbd class="bg-slate-700 text-slate-300 border-slate-600">⌘K</kbd>
                     </button>
 
                     <!-- Theme toggle -->
-                    <button class="theme-toggle text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors duration-200" id="theme-toggle" aria-label="Toggle dark/light theme" title="Toggle theme">
+                    <button class="theme-toggle text-slate-300 bg-slate-800/80 border border-slate-700 hover:bg-slate-700 hover:text-white transition-colors duration-200" id="theme-toggle" aria-label="Toggle dark/light theme" title="Toggle theme">
                         <!-- Moon icon (shown in light mode) -->
-                        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="icon-moon text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
                         </svg>
                         <!-- Sun icon (shown in dark mode) -->
-                        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="icon-sun text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="5"/>
                             <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
                             <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
@@ -83,7 +83,7 @@
                     {% if session.get('user') %}
                         {# ── Tier 3: Google authenticated user ── #}
                         <div class="user-menu" id="user-menu">
-                            <button class="user-avatar-btn" id="user-avatar-btn"
+                            <button class="user-avatar-btn border-slate-700" id="user-avatar-btn"
                                     aria-haspopup="true" aria-expanded="false"
                                     title="{{ session['user'].get('name', 'Account') }}">
                                 {% if session['user'].get('picture') %}
@@ -91,24 +91,24 @@
                                          alt="{{ session['user'].get('name', 'User') }}"
                                          class="user-avatar-img">
                                 {% else %}
-                                    <span class="user-avatar-initials">{{ (session['user'].get('name') or 'U')[0].upper() }}</span>
+                                    <span class="user-avatar-initials bg-slate-800 text-white">{{ (session['user'].get('name') or 'U')[0].upper() }}</span>
                                 {% endif %}
                             </button>
-                            <div class="user-dropdown bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200" id="user-dropdown" hidden>
-                                <div class="user-dropdown-header border-b border-slate-200 dark:border-slate-800">
-                                    <strong class="text-slate-900 dark:text-white">{{ session['user'].get('name', 'Signed In') }}</strong>
-                                    <small class="text-slate-500 dark:text-slate-400">{{ session['user'].get('email', '') }}</small>
+                            <div class="user-dropdown bg-slate-900 border border-slate-800 text-slate-200" id="user-dropdown" hidden>
+                                <div class="user-dropdown-header border-b border-slate-800">
+                                    <strong class="text-white">{{ session['user'].get('name', 'Signed In') }}</strong>
+                                    <small class="text-slate-400">{{ session['user'].get('email', '') }}</small>
                                 </div>
-                                <a href="/settings" class="user-dropdown-item text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+                                <a href="/settings" class="user-dropdown-item text-slate-300 hover:bg-slate-800 hover:text-white">
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="margin-right:0.4rem"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                                     Settings &amp; API Keys
                                 </a>
-                                <a href="/profile" class="user-dropdown-item text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+                                <a href="/profile" class="user-dropdown-item text-slate-300 hover:bg-slate-800 hover:text-white">
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="margin-right:0.4rem"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                                     My Profile &amp; Scans
                                 </a>
-                                <div class="user-dropdown-divider border-t border-slate-200 dark:border-slate-800"></div>
-                                <a href="/auth/logout" class="user-dropdown-item user-dropdown-item--danger">
+                                <div class="user-dropdown-divider border-t border-slate-800"></div>
+                                <a href="/auth/logout" class="user-dropdown-item user-dropdown-item--danger text-red-400 hover:bg-red-500/10">
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="margin-right:0.4rem"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                                     Sign Out
                                 </a>
@@ -118,7 +118,7 @@
                     {% elif is_guest %}
                         {# ── Tier 2: Guest mode — interactive dropdown with log out ── #}
                         <div class="user-menu guest-menu" id="guest-menu">
-                            <button class="guest-quota-btn text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors duration-200" id="guest-menu-btn"
+                            <button class="guest-quota-btn text-slate-200 bg-slate-800/80 border border-slate-700 hover:bg-slate-700 hover:text-white transition-colors duration-200" id="guest-menu-btn"
                                     aria-haspopup="true" aria-expanded="false"
                                     title="Guest session options">
                                 {% if guest_scans_left > 0 %}
@@ -131,17 +131,17 @@
                                     <svg class="chevron-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
                                 {% endif %}
                             </button>
-                            <div class="user-dropdown guest-dropdown bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200" id="guest-dropdown" hidden>
-                                <div class="user-dropdown-header border-b border-slate-200 dark:border-slate-800">
-                                    <strong class="text-slate-900 dark:text-white">Guest Account</strong>
-                                    <small class="text-slate-500 dark:text-slate-400">{{ guest_scans_left }}&thinsp;/&thinsp;{{ guest_scan_limit }} free audits remaining</small>
+                            <div class="user-dropdown guest-dropdown bg-slate-900 border border-slate-800 text-slate-200" id="guest-dropdown" hidden>
+                                <div class="user-dropdown-header border-b border-slate-800">
+                                    <strong class="text-white">Guest Account</strong>
+                                    <small class="text-slate-400">{{ guest_scans_left }}&thinsp;/&thinsp;{{ guest_scan_limit }} free audits remaining</small>
                                 </div>
-                                <a href="/auth/login" class="user-dropdown-item text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+                                <a href="/auth/login" class="user-dropdown-item text-slate-300 hover:bg-slate-800 hover:text-white">
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="margin-right:0.4rem"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
                                     Sign In with Google
                                 </a>
-                                <div class="user-dropdown-divider border-t border-slate-200 dark:border-slate-800"></div>
-                                <a href="/auth/logout" class="user-dropdown-item user-dropdown-item--danger">
+                                <div class="user-dropdown-divider border-t border-slate-800"></div>
+                                <a href="/auth/logout" class="user-dropdown-item user-dropdown-item--danger text-red-400 hover:bg-red-500/10">
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="margin-right:0.4rem"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                                     Log Out / Reset Guest
                                 </a>
@@ -150,7 +150,7 @@
 
                     {% else %}
                         {# ── Tier 1: Anonymous visitor — simple sign-in button ── #}
-                        <a href="/auth/login" class="nav-signin-btn nav-signin-btn--anon bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-600 dark:hover:bg-indigo-500 transition-colors duration-200 shadow-sm"
+                        <a href="/auth/login" class="nav-signin-btn nav-signin-btn--anon bg-indigo-600 hover:bg-indigo-500 text-white transition-colors duration-200 shadow-sm"
                            id="nav-signin-anon" title="Sign in or continue as guest">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
                             Sign In
