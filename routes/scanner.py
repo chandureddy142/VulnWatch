@@ -52,31 +52,21 @@ def _resolve_guest_id():
 
 @scanner_bp.route("/scanner", methods=["GET"])
 @scanner_bp.route("/scan", methods=["GET"])
-def scanner_form():
+def scan_page():
     """Render the scan target configuration form.
 
     Access tiers:
-      Tier 1 (anonymous): redirect to /auth/login?reason=audit_required
-      Tier 2 (guest): allow, show quota status
+      Tier 2 (guest): allow, auto-issue guest device cookie
       Tier 3 (Google): allow, show full UI
     """
     db = get_session()
     cleanup_stale_scans(db, max_age_seconds=120)
     user_id = session.get("user_id")
 
-    # ── Tier 1 gate: anonymous visitor ──────────────────────────────────────
-    # Allow if: (a) authenticated Google user, OR
-    #           (b) session is_guest flag is set, OR
-    #           (c) a guest_device_id cookie already exists from a prior visit
-    is_google_user = bool(user_id)
-    is_guest_session = bool(session.get("is_guest"))
-    has_guest_cookie = bool(request.cookies.get("guest_device_id", "").strip())
+    # Determine user role
+    is_google_user = bool(user_id and not session.get("is_guest"))
 
-    if not is_google_user and not is_guest_session and not has_guest_cookie:
-        return redirect(url_for("auth.login", reason="audit_required",
-                                next=url_for("scanner.scanner_form")))
-
-    # ── Build active scan count for the progress indicator ──────────────────
+    # Build active scan count for current user or guest session
     query = db.query(Scan).filter(Scan.status.in_([ScanStatus.RUNNING, ScanStatus.PENDING]))
     if user_id:
         query = query.filter(Scan.user_id == user_id)
@@ -85,7 +75,13 @@ def scanner_form():
         query = query.filter(Scan.guest_session_id == guest_id)
 
     active_count = query.count()
-    response = make_response(render_template("scanner.html", active_scan_count=active_count))
+    response = make_response(
+        render_template(
+            "scanner.html",
+            is_google_user=is_google_user,
+            active_scan_count=active_count,
+        )
+    )
 
     # Establish / refresh the persistent guest device cookie on every page load
     if not user_id:
@@ -98,6 +94,10 @@ def scanner_form():
         )
 
     return response
+
+
+# Alias for backwards compatibility with url_for('scanner.scanner_form')
+scanner_form = scan_page
 
 
 @scanner_bp.route("/queue", methods=["GET"])

@@ -15,9 +15,14 @@ import re
 import socket
 from typing import List
 
-import dns.exception
-import dns.rdatatype
-import dns.resolver
+try:
+    import dns.exception
+    import dns.rdatatype
+    import dns.resolver
+    DNS_AVAILABLE = True
+except ImportError:
+    DNS_AVAILABLE = False
+    dns = None
 
 from scanner.findings import RawFinding
 from scanner.severity import SeverityLevel
@@ -115,7 +120,7 @@ def audit_dns_sec(domain: str, subdomains: List[str] | None = None) -> List[RawF
         List of RawFinding objects.
     """
     findings: List[RawFinding] = []
-    if not domain or domain in ("localhost", "127.0.0.1"):
+    if not DNS_AVAILABLE or not domain or domain in ("localhost", "127.0.0.1"):
         return findings
 
     # ── 1. DNSSEC ──────────────────────────────────────────────────────────────

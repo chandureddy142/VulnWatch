@@ -47,7 +47,7 @@
                         Dashboard
                     </a>
                     {% endif %}
-                    <a href="/scanner" 
+                    <a href="{{ url_for('scanner.scan_page') if 'scanner.scan_page' in url_for.__globals__ else '/scan' }}" 
                        id="nav-new-audit" 
                        style="display: inline-flex !important; align-items: center !important; padding: 7px 16px !important; font-size: 13px !important; font-weight: 600 !important; color: #e2e8f0 !important; background-color: #1e293b !important; border: 1px solid #334155 !important; border-radius: 8px !important; text-decoration: none !important; white-space: nowrap !important;">
                         New Audit
@@ -81,19 +81,20 @@
                         LOCAL ENV
                     </span>
 
-                    {% if session.get('user') %}
+                    {% set user_obj = session.get('user') %}
+                    {% if user_obj and user_obj is mapping %}
                         <div class="user-menu" id="user-menu">
-                            <button class="user-avatar-btn border-slate-700" id="user-avatar-btn" aria-haspopup="true" aria-expanded="false" title="{{ session['user'].get('name', 'Account') }}">
-                                {% if session['user'].get('picture') %}
-                                    <img src="{{ session['user']['picture'] }}" alt="{{ session['user'].get('name', 'User') }}" class="user-avatar-img">
+                            <button class="user-avatar-btn border-slate-700" id="user-avatar-btn" aria-haspopup="true" aria-expanded="false" title="{{ user_obj.get('name', 'Account') }}">
+                                {% if user_obj.get('picture') %}
+                                    <img src="{{ user_obj.get('picture') }}" alt="{{ user_obj.get('name', 'User') }}" class="user-avatar-img">
                                 {% else %}
-                                    <span class="user-avatar-initials bg-slate-800 text-white">{{ (session['user'].get('name') or 'U')[0].upper() }}</span>
+                                    <span class="user-avatar-initials bg-slate-800 text-white">{{ (user_obj.get('name') or 'U')[0].upper() }}</span>
                                 {% endif %}
                             </button>
                             <div class="user-dropdown bg-slate-900 border border-slate-800 text-slate-200" id="user-dropdown" hidden>
                                 <div class="user-dropdown-header border-b border-slate-800">
-                                    <strong class="text-white">{{ session['user'].get('name', 'Signed In') }}</strong>
-                                    <small class="text-slate-400">{{ session['user'].get('email', '') }}</small>
+                                    <strong class="text-white">{{ user_obj.get('name', 'Signed In') }}</strong>
+                                    <small class="text-slate-400">{{ user_obj.get('email', '') }}</small>
                                 </div>
                                 <a href="/settings" class="user-dropdown-item text-slate-300 hover:bg-slate-800 hover:text-white">Settings &amp; API Keys</a>
                                 <a href="/profile" class="user-dropdown-item text-slate-300 hover:bg-slate-800 hover:text-white">My Profile &amp; Scans</a>

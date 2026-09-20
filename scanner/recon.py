@@ -14,7 +14,12 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
-import dns.resolver  # type: ignore[import]
+try:
+    import dns.resolver  # type: ignore[import]
+    DNS_AVAILABLE = True
+except ImportError:
+    DNS_AVAILABLE = False
+    dns = None
 import requests
 from requests.exceptions import RequestException
 
@@ -179,7 +184,7 @@ def _enumerate_ct_subdomains(host: str, result: ReconResult, timeout: int) -> No
 
 def _audit_dns_security(host: str, target_url: str, result: ReconResult) -> None:
     """Audit DNS TXT records for SPF, DMARC, and DKIM; check CNAME for dangling pointers."""
-    if not host:
+    if not DNS_AVAILABLE or not host:
         return
 
     resolver = dns.resolver.Resolver()
