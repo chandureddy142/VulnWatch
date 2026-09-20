@@ -343,9 +343,7 @@
 
             <div class="login-divider">or</div>
 
-            {# Guest entry: go to /auth/guest which sets the cookie + session flag
-               and then redirects to /scanner (or the ``next`` param) #}
-            {% set guest_next = next if next else '/scanner' %}
+            {% set guest_next = next if (next and next not in ('/scanner', '/auth/login', '/auth/guest')) else '/dashboard' %}
             <a href="/auth/guest?next={{ guest_next | urlencode }}" class="btn-guest" id="guest-continue-btn">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>

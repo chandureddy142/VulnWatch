@@ -124,7 +124,7 @@ def view_report(scan_id: int):
 
     if not _check_report_access(scan):
         flash("You do not have permission to view this confidential audit report.", "danger")
-        return redirect(url_for("dashboard.index")), 403
+        return redirect(url_for("dashboard.index"))
 
     diff_data = _build_diff_map(scan)
     finding_snippets = {

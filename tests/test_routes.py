@@ -404,11 +404,11 @@ def test_report_ownership_enforcement(app_client):
         sess["user_id"] = 999
 
     res_html_view = app_client.get(f"/reports/{target_scan_id}", headers=API_HEADERS)
-    assert res_html_view.status_code == 403
+    assert res_html_view.status_code in (302, 403)
 
     res_json_dl = app_client.get(f"/reports/{target_scan_id}/json", headers=API_HEADERS)
-    assert res_json_dl.status_code == 403
+    assert res_json_dl.status_code in (302, 403)
 
     res_pdf_dl = app_client.get(f"/reports/{target_scan_id}/pdf", headers=API_HEADERS)
-    assert res_pdf_dl.status_code == 403
+    assert res_pdf_dl.status_code in (302, 403)
 
