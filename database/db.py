@@ -125,9 +125,27 @@ def _run_migrations(database_uri: str):
                     text("ALTER TABLE scans ADD COLUMN user_id INTEGER REFERENCES users(id)")
                 )
 
-            if "guest_session_id" not in scan_columns:
+            result = conn.execute(text("PRAGMA table_info(subdomain_assets)"))
+            subdomain_columns = {row[1] for row in result}
+
+            if "is_alive" not in subdomain_columns:
                 conn.execute(
-                    text("ALTER TABLE scans ADD COLUMN guest_session_id VARCHAR(100)")
+                    text("ALTER TABLE subdomain_assets ADD COLUMN is_alive BOOLEAN NOT NULL DEFAULT 1")
+                )
+
+            if "ip_address" not in subdomain_columns:
+                conn.execute(
+                    text("ALTER TABLE subdomain_assets ADD COLUMN ip_address VARCHAR(100)")
+                )
+
+            if "cname_target" not in subdomain_columns:
+                conn.execute(
+                    text("ALTER TABLE subdomain_assets ADD COLUMN cname_target VARCHAR(255)")
+                )
+
+            if "status" not in subdomain_columns:
+                conn.execute(
+                    text("ALTER TABLE subdomain_assets ADD COLUMN status VARCHAR(50) NOT NULL DEFAULT 'Live'")
                 )
 
         elif is_postgres:
@@ -160,6 +178,26 @@ def _run_migrations(database_uri: str):
             if not _pg_has_column(conn, "scans", "guest_session_id"):
                 conn.execute(
                     text("ALTER TABLE scans ADD COLUMN guest_session_id VARCHAR(100)")
+                )
+
+            if not _pg_has_column(conn, "subdomain_assets", "is_alive"):
+                conn.execute(
+                    text("ALTER TABLE subdomain_assets ADD COLUMN is_alive BOOLEAN NOT NULL DEFAULT TRUE")
+                )
+
+            if not _pg_has_column(conn, "subdomain_assets", "ip_address"):
+                conn.execute(
+                    text("ALTER TABLE subdomain_assets ADD COLUMN ip_address VARCHAR(100)")
+                )
+
+            if not _pg_has_column(conn, "subdomain_assets", "cname_target"):
+                conn.execute(
+                    text("ALTER TABLE subdomain_assets ADD COLUMN cname_target VARCHAR(255)")
+                )
+
+            if not _pg_has_column(conn, "subdomain_assets", "status"):
+                conn.execute(
+                    text("ALTER TABLE subdomain_assets ADD COLUMN status VARCHAR(50) NOT NULL DEFAULT 'Live'")
                 )
 
         conn.commit()
