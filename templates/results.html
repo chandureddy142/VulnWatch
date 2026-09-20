@@ -153,14 +153,48 @@
                 </span>
               </div>
 
-              {% if subdomains and subdomains|length > 0 %}
-                <div class="max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 pr-1 text-xs">
-                  {% for sub in subdomains %}
-                    <div class="py-1.5 flex items-center justify-between">
-                      <span class="font-mono text-slate-700 dark:text-slate-200 truncate">{{ sub }}</span>
-                      <a href="/scan?target=https://{{ sub }}" class="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
-                        Audit &rarr;
-                      </a>
+              {% set items = probed_subdomains if probed_subdomains is defined and probed_subdomains else [] %}
+              {% if not items and subdomains %}
+                {% set items = [] %}
+                {% for s in subdomains %}
+                  {% set _ = items.append({'subdomain': s, 'is_alive': True, 'status': 'Live', 'ip_address': None}) %}
+                {% endfor %}
+              {% endif %}
+
+              {% if items and items|length > 0 %}
+                <div class="max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 pr-1 text-xs">
+                  {% for item in items %}
+                    {% set sub_name = item.subdomain if item.subdomain is defined else item %}
+                    {% set status = item.status if item.status is defined else 'Live' %}
+                    {% set is_alive = item.is_alive if item.is_alive is defined else True %}
+                    {% set ip_addr = item.ip_address if item.ip_address is defined else None %}
+                    <div class="py-2 flex items-center justify-between gap-2">
+                      <div class="flex items-center gap-2 truncate">
+                        {% if status == 'Live' %}
+                          <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Live DNS"></span>
+                        {% elif status == 'Dangling CNAME' %}
+                          <span class="w-2 h-2 rounded-full bg-rose-500 shrink-0" title="Dangling CNAME Risk"></span>
+                        {% else %}
+                          <span class="w-2 h-2 rounded-full bg-slate-500 shrink-0" title="Inactive DNS"></span>
+                        {% endif %}
+                        <span class="font-mono text-slate-700 dark:text-slate-200 truncate">{{ sub_name }}</span>
+                        {% if ip_addr %}
+                          <span class="text-[10px] font-mono text-slate-400">({{ ip_addr }})</span>
+                        {% endif %}
+                      </div>
+                      <div class="flex items-center gap-2 shrink-0">
+                        {% if status == 'Dangling CNAME' %}
+                          <span class="px-2 py-0.5 text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-full">Dangling CNAME Risk</span>
+                          <span class="text-[11px] text-slate-500 cursor-not-allowed opacity-60" title="Dangling CNAME target detected. Target service does not resolve.">Audit &rarr;</span>
+                        {% elif is_alive %}
+                          <a href="/scan?target=https://{{ sub_name }}" class="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 font-semibold">
+                            Audit &rarr;
+                          </a>
+                        {% else %}
+                          <span class="px-2 py-0.5 text-[10px] font-semibold bg-slate-800 text-slate-400 border border-slate-700 rounded-full">Inactive DNS (Dormant)</span>
+                          <span class="text-[11px] text-slate-500 cursor-not-allowed opacity-60" title="This host has no active DNS record. Full HTTP/TLS scans cannot be performed.">Audit &rarr;</span>
+                        {% endif %}
+                      </div>
                     </div>
                   {% endfor %}
                 </div>

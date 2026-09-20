@@ -1,6 +1,7 @@
 from datetime import datetime
 import enum
 from sqlalchemy import (
+    Boolean,
     Column,
     DateTime,
     Enum,
@@ -112,6 +113,18 @@ class Scan(Base):
             recon = self.response_headers.get("_recon", {})
             if isinstance(recon, dict) and "ct_subdomains" in recon:
                 return recon.get("ct_subdomains") or []
+        return []
+
+    @property
+    def probed_subdomains(self):
+        """Return list of probed subdomain dictionaries from scan recon metadata."""
+        if self.response_headers and isinstance(self.response_headers, dict):
+            recon = self.response_headers.get("_recon", {})
+            if isinstance(recon, dict):
+                if "probed_subdomains" in recon and recon["probed_subdomains"]:
+                    return recon.get("probed_subdomains") or []
+                ct_subs = recon.get("ct_subdomains") or []
+                return [{"subdomain": s, "is_alive": True, "status": "Live", "ip_address": None} for s in ct_subs]
         return []
 
     def update_severity_counts(self):

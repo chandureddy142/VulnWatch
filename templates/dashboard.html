@@ -270,10 +270,23 @@
                 {% for sub in subdomain_assets if subdomain_assets is defined %}
                 <tr>
                     <td><code class="mono">{{ sub.subdomain }}</code></td>
-                    <td><span class="badge-status completed">LIVE</span></td>
+                    <td>
+                        {% set st = sub.status if sub.status is defined and sub.status else ('Live' if (sub.is_alive is not defined or sub.is_alive) else 'Dormant') %}
+                        {% if st == 'Live' %}
+                        <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Live</span>
+                        {% elif st == 'Dangling CNAME' %}
+                        <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20">Dangling CNAME Risk</span>
+                        {% else %}
+                        <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-800 text-slate-400 border border-slate-700">Dormant</span>
+                        {% endif %}
+                    </td>
                     <td class="text-muted mono">{{ sub.first_seen[:10] if sub.first_seen else 'N/A' }}</td>
                     <td>
-                        <a href="/scanner?target=https://{{ sub.subdomain }}" class="btn btn-xs btn-primary">Audit Subdomain</a>
+                        {% if st == 'Live' %}
+                        <a href="/scan?target=https://{{ sub.subdomain }}" class="btn btn-xs btn-primary">Audit Subdomain</a>
+                        {% else %}
+                        <button type="button" disabled class="btn btn-xs btn-secondary" style="opacity: 0.5; cursor: not-allowed;" title="Host is unresolvable or inactive">Audit Subdomain</button>
+                        {% endif %}
                     </td>
                 </tr>
                 {% else %}

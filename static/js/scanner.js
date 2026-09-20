@@ -297,7 +297,9 @@ document.addEventListener('DOMContentLoaded', function () {
                             // Return a sentinel so the .then chain does not fire
                             return null;
                         }
-                        throw new Error(data.message || data.error || 'Scan request failed.');
+                        const err = new Error(data.message || data.error || 'Scan request failed.');
+                        err.data = data;
+                        throw err;
                     }
                     return data;
                 });
@@ -317,7 +319,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .catch(function (err) {
                 appendLog(`[-] ERROR: ${err.message}`, 'error');
-                showError(err.message);
+                showError(err.message, err.data);
 
                 if (window.showToast) {
                     window.showToast(`Scan execution failed: ${err.message}`, 'error', 6000);

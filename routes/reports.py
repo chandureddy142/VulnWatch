@@ -136,6 +136,7 @@ def view_report(scan_id: int):
         "results.html",
         scan=scan,
         subdomains=scan.subdomains,
+        probed_subdomains=scan.probed_subdomains,
         diff_data=diff_data,
         finding_snippets=finding_snippets,
     )

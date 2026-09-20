@@ -163,7 +163,14 @@ def trigger_scan():
             target_url, allow_localhost=allow_localhost
         )
     except TargetValidationError as e:
-        return jsonify({"error": "Invalid Target URL", "message": str(e)}), 400
+        err_msg = str(e)
+        is_dns_err = "Unable to resolve" in err_msg or "did not resolve" in err_msg
+        return jsonify({
+            "error": "Target Validation Error",
+            "message": err_msg,
+            "reason": "DNS resolution failed (NXDOMAIN)." if is_dns_err else err_msg,
+            "security_note": "If this domain previously had active services, check for dangling DNS/CNAME records that could lead to subdomain takeover." if is_dns_err else "Ensure target URL hostname is correct and publicly reachable."
+        }), 400
 
     # Determine auth tier: Google user vs guest
     # Advanced modules are only executed for signed-in Google users (not guest sessions)
