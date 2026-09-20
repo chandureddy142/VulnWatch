@@ -77,7 +77,14 @@
                     </div>
 
                     <div class="form-group">
+                        {% set is_google_user = session.get('user_id') and not session.get('is_guest') %}
                         <label>Active Audit Modules</label>
+
+                        <!-- Standard Modules: available to all tiers -->
+                        <div class="module-section-label">
+                            <span class="module-tier-tag module-tier-standard">Standard</span>
+                            <span class="module-tier-desc">Available to all users including guest sessions</span>
+                        </div>
                         <div class="module-grid">
                             <label class="module-check">
                                 <input type="checkbox" name="module_headers" value="true" checked>
@@ -112,8 +119,176 @@
                                 </span>
                             </label>
                         </div>
-                        <div class="form-hint">Module toggles are informational for this build; the scan engine currently runs its full passive check set on every audit.</div>
-                    </div>
+
+                        <!-- Advanced Enterprise Modules: Google auth only -->
+                        <div class="module-section-label" style="margin-top: 18px;">
+                            <span class="module-tier-tag module-tier-enterprise">Enterprise</span>
+                            <span class="module-tier-desc">
+                                {% if is_google_user %}All advanced modules active — signed in as Google user{% else %}Sign in with Google to enable advanced modules{% endif %}
+                            </span>
+                        </div>
+                        <div class="module-grid">
+
+                            <!-- DNSSEC / CAA / DMARC / Dangling CNAMEs -->
+                            <div class="module-check-wrapper{% if not is_google_user %} module-check-locked{% endif %}">
+                                {% if is_google_user %}
+                                <label class="module-check">
+                                    <input type="checkbox" name="module_advanced_dns" value="true" checked>
+                                    <span class="module-check-box" aria-hidden="true"></span>
+                                    <span class="module-check-body">
+                                        <span class="module-check-title module-enterprise-title">DNSSEC, CAA &amp; Dangling Takeover</span>
+                                        <span class="module-check-desc">Zone verification, CNAME takeover patterns, and email policy</span>
+                                    </span>
+                                </label>
+                                {% else %}
+                                <label class="module-check module-check-disabled">
+                                    <input type="checkbox" name="module_advanced_dns" value="true" disabled>
+                                    <span class="module-check-box" aria-hidden="true"></span>
+                                    <span class="module-check-body">
+                                        <span class="module-check-title module-locked-title">
+                                            DNSSEC, CAA &amp; Dangling Takeover
+                                            <span class="module-lock-badge">
+                                                <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                                Google Only
+                                            </span>
+                                        </span>
+                                        <span class="module-check-desc">Zone verification, CNAME takeover patterns, and email policy</span>
+                                    </span>
+                                </label>
+                                <button type="button" onclick="promptGoogleSignIn('DNSSEC &amp; Mail Audit')" class="module-lock-overlay" aria-label="Locked — sign in to enable"></button>
+                                {% endif %}
+                            </div>
+
+                            <!-- Deep TLS Certificate Inspector -->
+                            <div class="module-check-wrapper{% if not is_google_user %} module-check-locked{% endif %}">
+                                {% if is_google_user %}
+                                <label class="module-check">
+                                    <input type="checkbox" name="module_tls_deep" value="true" checked>
+                                    <span class="module-check-box" aria-hidden="true"></span>
+                                    <span class="module-check-body">
+                                        <span class="module-check-title module-enterprise-title">Deep TLS Certificate Inspector</span>
+                                        <span class="module-check-desc">Expiry windows, legacy TLS 1.0/1.1 probe, and SAN extraction</span>
+                                    </span>
+                                </label>
+                                {% else %}
+                                <label class="module-check module-check-disabled">
+                                    <input type="checkbox" name="module_tls_deep" value="true" disabled>
+                                    <span class="module-check-box" aria-hidden="true"></span>
+                                    <span class="module-check-body">
+                                        <span class="module-check-title module-locked-title">
+                                            Deep TLS Certificate Inspector
+                                            <span class="module-lock-badge">
+                                                <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                                Google Only
+                                            </span>
+                                        </span>
+                                        <span class="module-check-desc">Expiry windows, legacy TLS 1.0/1.1 probe, and SAN extraction</span>
+                                    </span>
+                                </label>
+                                <button type="button" onclick="promptGoogleSignIn('Deep TLS Certificate Inspector')" class="module-lock-overlay" aria-label="Locked — sign in to enable"></button>
+                                {% endif %}
+                            </div>
+
+                            <!-- Process Isolation Headers -->
+                            <div class="module-check-wrapper{% if not is_google_user %} module-check-locked{% endif %}">
+                                {% if is_google_user %}
+                                <label class="module-check">
+                                    <input type="checkbox" name="module_headers_advanced" value="true" checked>
+                                    <span class="module-check-box" aria-hidden="true"></span>
+                                    <span class="module-check-body">
+                                        <span class="module-check-title module-enterprise-title">Process Isolation &amp; Permissions</span>
+                                        <span class="module-check-desc">COEP, COOP, CORP, Permissions-Policy, NEL, and CORS wildcard detection</span>
+                                    </span>
+                                </label>
+                                {% else %}
+                                <label class="module-check module-check-disabled">
+                                    <input type="checkbox" name="module_headers_advanced" value="true" disabled>
+                                    <span class="module-check-box" aria-hidden="true"></span>
+                                    <span class="module-check-body">
+                                        <span class="module-check-title module-locked-title">
+                                            Process Isolation &amp; Permissions
+                                            <span class="module-lock-badge">
+                                                <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                                Google Only
+                                            </span>
+                                        </span>
+                                        <span class="module-check-desc">COEP, COOP, CORP, Permissions-Policy, NEL, and CORS wildcard detection</span>
+                                    </span>
+                                </label>
+                                <button type="button" onclick="promptGoogleSignIn('Process Isolation Audit')" class="module-lock-overlay" aria-label="Locked — sign in to enable"></button>
+                                {% endif %}
+                            </div>
+
+                            <!-- Cloud Storage & Client-Side Secrets -->
+                            <div class="module-check-wrapper{% if not is_google_user %} module-check-locked{% endif %}">
+                                {% if is_google_user %}
+                                <label class="module-check">
+                                    <input type="checkbox" name="module_frontend" value="true" checked>
+                                    <span class="module-check-box" aria-hidden="true"></span>
+                                    <span class="module-check-body">
+                                        <span class="module-check-title module-enterprise-title">Cloud Storage &amp; Secret Sniffing</span>
+                                        <span class="module-check-desc">S3/GCS/Azure bucket exposure, leaked credentials, SRI gaps, source maps</span>
+                                    </span>
+                                </label>
+                                {% else %}
+                                <label class="module-check module-check-disabled">
+                                    <input type="checkbox" name="module_frontend" value="true" disabled>
+                                    <span class="module-check-box" aria-hidden="true"></span>
+                                    <span class="module-check-body">
+                                        <span class="module-check-title module-locked-title">
+                                            Cloud Storage &amp; Secret Sniffing
+                                            <span class="module-lock-badge">
+                                                <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                                Google Only
+                                            </span>
+                                        </span>
+                                        <span class="module-check-desc">S3/GCS/Azure bucket exposure, leaked credentials, SRI gaps, source maps</span>
+                                    </span>
+                                </label>
+                                <button type="button" onclick="promptGoogleSignIn('Cloud Storage &amp; Secret Sniffing')" class="module-lock-overlay" aria-label="Locked — sign in to enable"></button>
+                                {% endif %}
+                            </div>
+
+                            <!-- Metadata & Compliance -->
+                            <div class="module-check-wrapper{% if not is_google_user %} module-check-locked{% endif %}">
+                                {% if is_google_user %}
+                                <label class="module-check">
+                                    <input type="checkbox" name="module_metadata" value="true" checked>
+                                    <span class="module-check-box" aria-hidden="true"></span>
+                                    <span class="module-check-body">
+                                        <span class="module-check-title module-enterprise-title">Metadata &amp; Compliance (RFC 9116)</span>
+                                        <span class="module-check-desc">security.txt presence/expiry and robots.txt sensitive path disclosure</span>
+                                    </span>
+                                </label>
+                                {% else %}
+                                <label class="module-check module-check-disabled">
+                                    <input type="checkbox" name="module_metadata" value="true" disabled>
+                                    <span class="module-check-box" aria-hidden="true"></span>
+                                    <span class="module-check-body">
+                                        <span class="module-check-title module-locked-title">
+                                            Metadata &amp; Compliance (RFC 9116)
+                                            <span class="module-lock-badge">
+                                                <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                                Google Only
+                                            </span>
+                                        </span>
+                                        <span class="module-check-desc">security.txt presence/expiry and robots.txt sensitive path disclosure</span>
+                                    </span>
+                                </label>
+                                <button type="button" onclick="promptGoogleSignIn('Metadata &amp; Compliance Audit')" class="module-lock-overlay" aria-label="Locked — sign in to enable"></button>
+                                {% endif %}
+                            </div>
+
+                        </div><!-- /module-grid enterprise -->
+
+                        {% if not is_google_user %}
+                        <div class="module-signin-nudge">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                            <span><a href="{{ url_for('auth.login', next=request.url) }}" class="module-signin-link">Sign in with Google</a> to unlock DNSSEC, TLS, process isolation, cloud storage scanning, and compliance checks.</span>
+                        </div>
+                        {% endif %}
+
+                    </div><!-- /form-group -->
 
                     <!-- Mandatory Authorization Confirmation -->
                     <div class="auth-box">
@@ -218,4 +393,72 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/scanner.js') }}"></script>
+<script>
+/* ─── Auth Gate Toast for Enterprise Module Lock ────────────────────────── */
+(function () {
+  // Inject toast element once
+  var toast = document.createElement('div');
+  toast.id = 'authGateToast';
+  toast.setAttribute('role', 'alert');
+  toast.setAttribute('aria-live', 'assertive');
+  toast.style.cssText = [
+    'position:fixed', 'bottom:28px', 'right:28px', 'z-index:9999',
+    'background:linear-gradient(135deg,#1e293b,#0f172a)',
+    'border:1px solid #6366f1', 'border-radius:12px',
+    'padding:16px 20px', 'min-width:320px', 'max-width:420px',
+    'box-shadow:0 8px 32px rgba(0,0,0,0.5)',
+    'display:flex', 'gap:12px', 'align-items:flex-start',
+    'transform:translateY(20px)', 'opacity:0',
+    'transition:opacity 0.25s ease, transform 0.25s ease',
+    'pointer-events:none'
+  ].join(';');
+  toast.innerHTML = [
+    '<div style="flex-shrink:0;margin-top:2px">',
+      '<svg width="20" height="20" fill="none" stroke="#818cf8" viewBox="0 0 24 24">',
+        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"',
+        ' d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>',
+      '</svg>',
+    '</div>',
+    '<div style="flex:1">',
+      '<div style="font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:4px" id="authGateToastTitle">Enterprise Module Locked</div>',
+      '<div style="font-size:12px;color:#94a3b8;line-height:1.5" id="authGateToastBody">Sign in with Google to unlock this module.</div>',
+      '<a href="{{ url_for(\'auth.login\') }}" id="authGateToastCta"',
+         ' style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:6px 14px;',
+                 'background:#6366f1;border-radius:6px;color:#fff;font-size:12px;font-weight:600;',
+                 'text-decoration:none;transition:background 0.2s">',
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/></svg>',
+        'Sign in with Google',
+      '</a>',
+    '</div>',
+    '<button onclick="this.closest(\'#authGateToast\').style.opacity=0;this.closest(\'#authGateToast\').style.pointerEvents=\'none\'"',
+           ' style="flex-shrink:0;background:none;border:none;color:#64748b;cursor:pointer;padding:0;font-size:18px;line-height:1" aria-label="Dismiss">&#x2715;</button>'
+  ].join('');
+  document.body.appendChild(toast);
+
+  var _hideTimer = null;
+
+  /**
+   * Show auth gate toast with the locked module name.
+   * @param {string} featureName - Human-readable name of the locked feature.
+   */
+  window.promptGoogleSignIn = function (featureName) {
+    clearTimeout(_hideTimer);
+    document.getElementById('authGateToastTitle').textContent = '\u{1F512} ' + (featureName || 'Enterprise Module') + ' — Locked';
+    document.getElementById('authGateToastBody').textContent =
+      'This module is available exclusively to Google-authenticated users. Sign in to run the full passive VAPT suite.';
+    toast.style.pointerEvents = 'auto';
+    // Trigger show animation
+    requestAnimationFrame(function () {
+      toast.style.opacity = '1';
+      toast.style.transform = 'translateY(0)';
+    });
+    // Auto-dismiss after 6 seconds
+    _hideTimer = setTimeout(function () {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(20px)';
+      setTimeout(function () { toast.style.pointerEvents = 'none'; }, 260);
+    }, 6000);
+  };
+})();
+</script>
 {% endblock %}

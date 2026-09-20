@@ -131,6 +131,8 @@ def trigger_scan():
     Payload (JSON or Form):
         target_url (str): URL to audit.
         authorized (bool): Explicit confirmation that user is authorized to audit target.
+        module_advanced_dns / module_tls_deep / module_headers_advanced /
+        module_frontend / module_metadata (bool): Advanced enterprise module toggles.
     """
     if request.is_json:
         data = request.get_json() or {}
@@ -162,6 +164,21 @@ def trigger_scan():
         )
     except TargetValidationError as e:
         return jsonify({"error": "Invalid Target URL", "message": str(e)}), 400
+
+    # Determine auth tier: Google user vs guest
+    # Advanced modules are only executed for signed-in Google users (not guest sessions)
+    is_authenticated_user = bool(session.get("user_id") and not session.get("is_guest"))
+
+    # Parse which enterprise modules the user selected
+    from scanner.engine import ADVANCED_MODULES
+    active_modules = {}
+    for mod_key in ADVANCED_MODULES:
+        raw_val = data.get(mod_key, "")
+        # Form checkboxes send "true", "on", or "1"
+        active_modules[mod_key] = str(raw_val).lower() in ("true", "1", "yes", "on")
+    # If no advanced module keys were submitted (e.g. API request), default all on for auth users
+    if not any(active_modules.values()) and is_authenticated_user and request.is_json:
+        active_modules = {k: True for k in ADVANCED_MODULES}
 
     # --- Guest quota enforcement & ownership tagging ---
     db = get_session()
@@ -199,7 +216,11 @@ def trigger_scan():
     )
 
     try:
-        scan = engine.execute_scan(validated_url)
+        scan = engine.execute_scan(
+            validated_url,
+            is_authenticated_user=is_authenticated_user,
+            active_modules=active_modules,
+        )
     except Exception:
         error_id = uuid.uuid4().hex
         current_app.logger.exception("Scan execution failed id=%s", error_id)

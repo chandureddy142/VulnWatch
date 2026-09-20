@@ -2,19 +2,23 @@ import json
 import os
 from typing import Any, Dict, List, Optional
 
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.pdfgen import canvas
-from reportlab.platypus import (
-    HRFlowable,
-    KeepTogether,
-    Paragraph,
-    SimpleDocTemplate,
-    Spacer,
-    Table,
-    TableStyle,
-)
+try:
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.pdfgen import canvas
+    from reportlab.platypus import (
+        HRFlowable,
+        KeepTogether,
+        Paragraph,
+        SimpleDocTemplate,
+        Spacer,
+        Table,
+        TableStyle,
+    )
+    REPORTLAB_AVAILABLE = True
+except ImportError:
+    REPORTLAB_AVAILABLE = False
 
 from database.models import Scan
 
@@ -31,7 +35,10 @@ def _status_tag(ok: bool, ok_label: str = "[PASS]", fail_label: str = "[MISSING]
     return ok_label if ok else fail_label
 
 
-class NumberedCanvas(canvas.Canvas):
+canvas_parent = canvas.Canvas if REPORTLAB_AVAILABLE else object
+
+
+class NumberedCanvas(canvas_parent):
     """Two-pass ReportLab canvas that calculates exact total page count and draws headers/footers."""
 
     def __init__(self, *args, **kwargs):
@@ -81,6 +88,19 @@ def generate_pdf_report(scan: Scan, output_path: str) -> str:
         The output file path string.
     """
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+    if not REPORTLAB_AVAILABLE:
+        # Fallback minimal PDF if reportlab is not installed
+        pdf_fallback = (
+            b"%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
+            b"2 0 obj<</Type/Pages/Count 1/Kids[3 0 R]>>endobj\n"
+            b"3 0 obj<</Type/Page/MediaBox[0 0 612 792]/Parent 2 0 R/Resources<</Font<</F1 4 0 R>>>>/Contents 5 0 R>>endobj\n"
+            b"4 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj\n"
+            b"5 0 obj<</Length 85>>stream\nBT /F1 14 Tf 50 700 Td (VulnWatch Executive Audit Report) Tj 0 -20 Td (Reportlab package not installed.) Tj ET\nendstream\nendobj\n"
+            b"xref\n0 6\n0000000000 65535 f \n0000000009 00000 n \n0000000056 00000 n \n0000000111 00000 n \n0000000224 00000 n \n0000000297 00000 n \ntrailer<</Size 6/Root 1 0 R>>\nstartxref\n433\n%%EOF\n"
+        )
+        with open(output_path, "wb") as f:
+            f.write(pdf_fallback)
+        return output_path
 
     doc = SimpleDocTemplate(
         output_path,

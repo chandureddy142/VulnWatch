@@ -50,6 +50,7 @@
      PASSIVE RECON INTELLIGENCE PANEL (appears only when recon data exists)
      ═══════════════════════════════════════════════════════════════════════ -->
 {% set recon = (scan.response_headers['_recon'] if scan.response_headers and '_recon' in scan.response_headers else None) %}
+{% set adv = (scan.response_headers['_advanced'] if scan.response_headers and '_advanced' in scan.response_headers else None) %}
 {% set subdomains = subdomains if subdomains is defined and subdomains is not none else (scan.subdomains if scan.subdomains else (recon.ct_subdomains if recon and recon.ct_subdomains else [])) %}
 {% if recon %}
 <div class="panel recon-panel" id="recon-panel">
@@ -203,6 +204,55 @@
 </div>
 {% endif %}
 
+<!-- ═══════════════════════════════════════════════════════════════════════
+     ADVANCED TELEMETRY BADGE STRIP (only when advanced modules ran)
+     ═══════════════════════════════════════════════════════════════════════ -->
+{% if adv and not adv.get('guest_session') %}
+<div class="panel adv-telemetry-strip">
+    <div class="adv-telemetry-header">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>Enterprise Telemetry</span>
+    </div>
+    <div class="adv-telemetry-badges">
+
+        {% if adv.get('dnssec_checked') %}
+        <div class="adv-badge {% if adv.get('dnssec_status') == 'Validated' %}adv-badge--ok{% else %}adv-badge--warn{% endif %}">
+            <span class="adv-badge-label">DNSSEC</span>
+            <span class="adv-badge-val">{{ adv.get('dnssec_status', 'N/A') }}</span>
+        </div>
+        <div class="adv-badge {% if adv.get('caa_configured') %}adv-badge--ok{% else %}adv-badge--warn{% endif %}">
+            <span class="adv-badge-label">CAA Record</span>
+            <span class="adv-badge-val">{{ 'Configured' if adv.get('caa_configured') else 'Missing' }}</span>
+        </div>
+        {% endif %}
+
+        {% if adv.get('tls_deep_checked') %}
+        <div class="adv-badge adv-badge--info">
+            <span class="adv-badge-label">TLS SANs</span>
+            <span class="adv-badge-val">{{ adv.get('cert_sans', [])|length }}</span>
+        </div>
+        {% endif %}
+
+        {% if adv.get('frontend_checked') is not none %}
+        <div class="adv-badge {% if adv.get('cloud_buckets_found', 0) > 0 %}adv-badge--warn{% else %}adv-badge--ok{% endif %}">
+            <span class="adv-badge-label">Cloud Buckets</span>
+            <span class="adv-badge-val">{{ adv.get('cloud_buckets_found', 0) }} found</span>
+        </div>
+        {% endif %}
+
+        {% if adv.get('metadata_checked') %}
+        {% if adv.get('security_txt_present') is not none %}
+        <div class="adv-badge {% if adv.get('security_txt_present') %}adv-badge--ok{% else %}adv-badge--warn{% endif %}">
+            <span class="adv-badge-label">RFC 9116 security.txt</span>
+            <span class="adv-badge-val">{{ 'Present' if adv.get('security_txt_present') else 'Not Found' }}</span>
+        </div>
+        {% endif %}
+        {% endif %}
+
+    </div>
+</div>
+{% endif %}
+
 <!-- Filter &amp; Search Controls -->
 
 <div class="filter-toolbar">
@@ -226,11 +276,37 @@
     </div>
 </div>
 
+<!-- Category Filter Tabs -->
+<div class="category-filter-bar" id="category-filter-bar">
+    <span class="cat-filter-label">Category:</span>
+    <button type="button" class="cat-filter-btn is-active" data-cat="ALL">All Modules</button>
+    <button type="button" class="cat-filter-btn" data-cat="headers">Headers &amp; CSP</button>
+    <button type="button" class="cat-filter-btn" data-cat="dns">DNS &amp; Mail</button>
+    <button type="button" class="cat-filter-btn" data-cat="tls">TLS / SSL</button>
+    <button type="button" class="cat-filter-btn" data-cat="client">Client-Side</button>
+    <button type="button" class="cat-filter-btn" data-cat="infra">Infrastructure</button>
+    <button type="button" class="cat-filter-btn" data-cat="compliance">Compliance</button>
+</div>
+
 <!-- Findings Cards Container -->
 <div class="findings-list" id="findings-container">
     {% for finding in scan.findings %}
     {% set diff_status = (diff_data.finding_diff.get(finding.id, 'NEW') if (diff_data is defined and diff_data.has_previous) else '') %}
-    <article class="finding-item panel" data-severity="{{ finding.severity.value }}" data-diff="{{ diff_status }}" data-triage="{{ finding.triage_status.value if finding.triage_status else 'active' }}">
+    {% set _cat = finding.category | lower %}
+    {% if 'header' in _cat or 'csp' in _cat or 'cors' in _cat or 'permission' in _cat or 'isolation' in _cat %}
+      {% set _cat_key = 'headers' %}
+    {% elif 'dns' in _cat or 'mail' in _cat or 'dmarc' in _cat or 'spf' in _cat or 'dkim' in _cat or 'bimi' in _cat %}
+      {% set _cat_key = 'dns' %}
+    {% elif 'tls' in _cat or 'ssl' in _cat or 'transport' in _cat or 'certificate' in _cat %}
+      {% set _cat_key = 'tls' %}
+    {% elif 'client' in _cat or 'frontend' in _cat or 'secret' in _cat or 'cloud' in _cat or 'sri' in _cat %}
+      {% set _cat_key = 'client' %}
+    {% elif 'compliance' in _cat or 'metadata' in _cat or 'robots' in _cat or 'security.txt' in _cat %}
+      {% set _cat_key = 'compliance' %}
+    {% else %}
+      {% set _cat_key = 'infra' %}
+    {% endif %}
+    <article class="finding-item panel" data-severity="{{ finding.severity.value }}" data-diff="{{ diff_status }}" data-triage="{{ finding.triage_status.value if finding.triage_status else 'active' }}" data-category="{{ _cat_key }}">
         <button type="button" class="finding-header" aria-expanded="false">
             <span class="finding-title-group">
                 <span class="badge-sev {{ finding.severity.value.lower() }}">{{ finding.severity.value }}</span>
@@ -478,4 +554,55 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/results.js') }}"></script>
+<script>
+/* ─── Category Filter Tabs ────────────────────────────────────────────────── */
+(function () {
+  var catBtns = document.querySelectorAll('.cat-filter-btn');
+  var findings = document.querySelectorAll('.finding-item');
+  var activeCat = 'ALL';
+
+  function applyCatFilter() {
+    var hasVisible = false;
+    findings.forEach(function (el) {
+      var cat = el.getAttribute('data-category') || 'infra';
+      var sev = el.getAttribute('data-severity') || '';
+      var catMatch = activeCat === 'ALL' || cat === activeCat;
+      // Category filter combines with existing severity filter
+      // The existing results.js hides via CSS class 'hidden'; we use data-cat-hidden
+      if (catMatch) {
+        el.removeAttribute('data-cat-hidden');
+      } else {
+        el.setAttribute('data-cat-hidden', '1');
+        el.style.display = 'none';
+      }
+      // Re-show items that pass both filters
+      if (catMatch && !el.classList.contains('hidden')) {
+        el.style.display = '';
+        hasVisible = true;
+      }
+    });
+    // Re-trigger existing severity/search filters for accurate counts
+    var noResults = document.getElementById('no-results-state');
+    if (noResults) {
+      noResults.classList.toggle('hidden', hasVisible);
+    }
+  }
+
+  catBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      catBtns.forEach(function (b) { b.classList.remove('is-active'); });
+      btn.classList.add('is-active');
+      activeCat = btn.getAttribute('data-cat');
+      // Remove cat-hidden from all first, then re-apply
+      findings.forEach(function (el) {
+        el.removeAttribute('data-cat-hidden');
+        el.style.display = '';
+      });
+      applyCatFilter();
+      // Re-apply severity filters if results.js exposes a global re-filter fn
+      if (typeof window.applyFilters === 'function') { window.applyFilters(); }
+    });
+  });
+})();
+</script>
 {% endblock %}

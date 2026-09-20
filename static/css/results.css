@@ -1126,4 +1126,121 @@
 }
 
 
+/* =========================================================
+   Advanced Telemetry Badge Strip
+   ========================================================= */
 
+.adv-telemetry-strip {
+  padding: 12px 20px;
+}
+
+.adv-telemetry-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #818cf8;
+  margin-bottom: 12px;
+}
+
+.adv-telemetry-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.adv-badge {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  min-width: 110px;
+  border: 1px solid;
+}
+
+.adv-badge--ok {
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.25);
+}
+
+.adv-badge--warn {
+  background: rgba(234, 179, 8, 0.08);
+  border-color: rgba(234, 179, 8, 0.25);
+}
+
+.adv-badge--info {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+.adv-badge-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.adv-badge-val {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.adv-badge--ok .adv-badge-val { color: #4ade80; }
+.adv-badge--warn .adv-badge-val { color: #fbbf24; }
+.adv-badge--info .adv-badge-val { color: #818cf8; }
+
+/* =========================================================
+   Category Filter Tabs
+   ========================================================= */
+
+.category-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+
+.cat-filter-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-right: 4px;
+}
+
+.cat-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 11px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.cat-filter-btn:hover {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.35);
+  color: #a5b4fc;
+}
+
+.cat-filter-btn.is-active {
+  background: rgba(99, 102, 241, 0.18);
+  border-color: rgba(99, 102, 241, 0.5);
+  color: #a5b4fc;
+  font-weight: 700;
+}
