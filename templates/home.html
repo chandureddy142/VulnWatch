@@ -4,11 +4,24 @@
 
 {% block extra_css %}
 <style>
-/* Centered Layout Container */
+/* Responsive Wide Container (1400px) */
 .home-page-container {
-  max-width: 1200px;
+  max-width: 1400px;
+  width: 100%;
   margin: 0 auto;
-  padding: 2rem 1rem 4rem 1rem;
+  padding: 0 1rem 4rem 1rem;
+}
+@media (min-width: 640px) {
+  .home-page-container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+@media (min-width: 1024px) {
+  .home-page-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
 }
 
 /* Card Base */
@@ -60,7 +73,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="home-page-container">
+<div class="home-page-container max-w-[1400px] w-full mx-auto px-4 sm:px-6 lg:px-8">
 
     <!-- Hidden assertion marker for automated tests -->
     <span style="display:none;">Executive Audit Dashboard</span>
@@ -76,7 +89,7 @@
     </div>
 
     <!-- 2. GLOBAL METRICS GRID (3-Column) -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem;">
 
         <!-- Card 1: Global Avg Posture -->
         <div class="home-card" style="display: flex; flex-direction: column; justify-content: space-between;">
@@ -131,7 +144,7 @@
 
     </div>
 
-    <!-- 3. AUDITS ACTIVITY GRAPH (Full Width) -->
+    <!-- 3. AUDITS ACTIVITY GRAPH (Full Width, Centered, Headroom Wave) -->
     <div class="home-card" style="padding: 20px; overflow: hidden; margin-top: 24px;">
         <div style="display: flex; align-items: center; justify-content: space-between;">
             <h2 class="text-slate-900" style="font-size: 18px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
@@ -140,16 +153,16 @@
             </h2>
             <span style="font-size: 12px; font-weight: 600; padding: 4px 10px; background: #f1f5f9; color: #475569; border-radius: 9999px; border: 1px solid #e2e8f0;">Last 30 days</span>
         </div>
-        <div class="w-full h-44 mt-4 overflow-hidden relative" style="width: 100%; height: 160px; margin-top: 16px; position: relative; overflow: hidden;">
-            <svg viewBox="0 0 900 160" preserveAspectRatio="none" class="w-full h-full" style="width: 100%; height: 100%; display: block;">
+        <div class="w-full h-64 sm:h-72 mt-4 relative overflow-hidden" style="width: 100%; height: 280px; min-height: 280px; margin-top: 16px; position: relative; overflow: hidden;">
+            <svg viewBox="0 0 1000 240" preserveAspectRatio="none" class="w-full h-full" style="width: 100%; height: 100%; display: block;">
                 <defs>
                     <linearGradient id="chartGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stop-color="#4f46e5" stop-opacity="0.25"/>
-                        <stop offset="100%" stop-color="#4f46e5" stop-opacity="0.0"/>
+                        <stop offset="0%" stop-color="#6366f1" stop-opacity="0.3"/>
+                        <stop offset="100%" stop-color="#6366f1" stop-opacity="0.0"/>
                     </linearGradient>
                 </defs>
-                <path fill="url(#chartGrad)" d="M 0 140 Q 150 120 250 80 T 500 110 T 750 40 T 900 70 L 900 160 L 0 160 Z"></path>
-                <path fill="none" stroke="#4f46e5" stroke-width="3" stroke-linecap="round" d="M 0 140 Q 150 120 250 80 T 500 110 T 750 40 T 900 70"></path>
+                <path fill="url(#chartGrad)" d="M 0 180 Q 200 160 350 140 T 650 170 Q 800 60 900 80 T 1000 160 L 1000 240 L 0 240 Z"></path>
+                <path fill="none" stroke="#6366f1" stroke-width="3" stroke-linecap="round" d="M 0 180 Q 200 160 350 140 T 650 170 Q 800 60 900 80 T 1000 160"></path>
             </svg>
         </div>
     </div>
@@ -223,7 +236,7 @@
             <p style="font-size: 14px; color: #64748b; margin: 4px 0 0;">How every assessment is scoped, executed, and mapped back to security guidance.</p>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
 
             <!-- Pipeline -->
             <div class="home-card" style="padding: 20px;">
