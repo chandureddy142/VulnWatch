@@ -7,6 +7,7 @@
 {% endblock %}
 
 {% block content %}
+<main style="max-width: 1500px !important; margin: 0 auto !important; padding: 32px 48px 60px 48px !important; width: 100% !important; box-sizing: border-box !important; display: flex !important; flex-direction: column !important; gap: 32px !important;">
 
 {% if not is_anonymous and total_scans == 0 %}
 <!-- Zero-state onboarding banner for tenant sessions with 0 scans -->
@@ -277,6 +278,7 @@
         <div class="pagination-controls" id="pagination-controls"></div>
     </div>
 </div>
+</main>
 {% endblock %}
 
 {% block scripts %}

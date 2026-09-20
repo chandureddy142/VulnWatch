@@ -7,20 +7,8 @@
 /* Full-Width Fluid Container (Matching Navbar Alignment) */
 .home-page-container {
   width: 100%;
-  margin: 0 auto;
-  padding: 0 1.5rem 4rem 1.5rem;
-}
-@media (min-width: 640px) {
-  .home-page-container {
-    padding-left: 2rem;
-    padding-right: 2rem;
-  }
-}
-@media (min-width: 1024px) {
-  .home-page-container {
-    padding-left: 2.5rem;
-    padding-right: 2.5rem;
-  }
+  margin: 0;
+  padding: 0 0 3rem 0;
 }
 
 /* ── INVERTED CONTRAST THEME SYSTEM ── */
@@ -225,19 +213,19 @@
 {% endblock %}
 
 {% block content %}
-<div class="w-full px-4 sm:px-6 lg:px-8 py-8 space-y-8 home-page-container">
+<main style="max-width: 1500px !important; margin: 0 auto !important; padding: 36px 48px 60px 48px !important; width: 100% !important; box-sizing: border-box !important; display: flex !important; flex-direction: column !important; gap: 32px !important;">
 
     <!-- Hidden assertion marker for automated tests -->
     <span style="display:none;">Executive Audit Dashboard</span>
 
     <!-- 1. HERO SECTION -->
-    <div style="margin-bottom: 2.25rem;">
-        <h1 style="font-size: 38px !important; line-height: 1.1 !important; font-weight: 800 !important; display: flex; align-items: center; margin: 0; padding: 0;">
-            <span style="color: #ffffff !important; -webkit-text-stroke: 1.5px #0f172a !important;">Vuln</span><span style="color: #2563eb !important;">Watch</span>
-        </h1>
-        <p class="home-subtext" style="margin-top: 6px !important; font-size: 13px !important; font-weight: 600 !important; letter-spacing: 0.05em !important; color: #94a3b8 !important; text-transform: uppercase !important;">
-            Passive VAPT &amp; Attack Surface Intelligence for Modern Organizations
-        </p>
+    <div class="mb-6 select-none">
+      <h1 style="font-size: clamp(48px, 7vw, 92px) !important; font-weight: 900 !important; line-height: 1 !important; letter-spacing: -0.03em !important; display: flex; align-items: center; margin: 0; padding: 0;">
+        <span style="color: #ffffff !important; -webkit-text-stroke: 2.5px #0f172a !important; text-shadow: 3px 3px 0px #0f172a;">Vuln</span><span style="color: #2563eb !important;">Watch</span>
+      </h1>
+      <p style="margin-top: 10px !important; font-size: clamp(12px, 1.2vw, 15px) !important; font-weight: 700 !important; letter-spacing: 0.1em !important; color: #64748b !important; text-transform: uppercase !important;">
+        PASSIVE VAPT &amp; ATTACK SURFACE INTELLIGENCE FOR MODERN ORGANIZATIONS
+      </p>
     </div>
 
     <!-- 2. GLOBAL METRICS GRID (3-Column Adaptive Cards) -->
@@ -464,5 +452,5 @@
         </div>
     </div>
 
-</div>
+</main>
 {% endblock %}

@@ -24,85 +24,68 @@
     </script>
 </head>
 <body>
-    <div class="app-shell">
+        <nav style="width: 100% !important; background-color: #0b0f17 !important; border-bottom: 1px solid #1e293b !important; padding: 12px 48px !important; box-sizing: border-box !important; position: sticky !important; top: 0 !important; z-index: 50 !important;">
+            <div style="max-width: 1500px !important; margin: 0 auto !important; display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: space-between !important; flex-wrap: nowrap !important; gap: 24px !important;">
+                
+                <!-- Left: Brand Logo & Title -->
+                <div style="display: flex !important; align-items: center !important; gap: 12px !important; flex-shrink: 0 !important;">
+                    <a href="/" style="display: flex !important; align-items: center !important; gap: 12px !important; text-decoration: none !important;">
+                        <div style="width: 32px !important; height: 32px !important; border-radius: 8px !important; background: rgba(99, 102, 241, 0.15) !important; border: 1px solid rgba(99, 102, 241, 0.3) !important; display: flex !important; align-items: center !important; justify-content: center !important;">
+                            <svg style="width: 18px !important; height: 18px !important; color: #818cf8 !important;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                            </svg>
+                        </div>
+                        <span style="color: #ffffff !important; font-weight: 800 !important; font-size: 18px !important; letter-spacing: -0.02em !important; white-space: nowrap !important;">VulnWatch</span>
+                    </a>
+                </div>
 
-        <header class="navbar bg-slate-900 border-b border-slate-800 sticky top-0 z-50 transition-colors duration-200" style="background-color: #0f172a !important; border-bottom-color: #1e293b !important;">
-            <div class="container navbar-inner">
-                <a href="/" class="brand flex items-center gap-3 text-white no-underline hover:no-underline" style="color: #ffffff !important; text-decoration: none;">
-                    <div class="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 flex-shrink-0" style="width: 32px; height: 32px; border-radius: 8px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); display: flex; align-items: center; justify-content: center; color: #818cf8;">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                            <path d="m9 12 2 2 4-4"/>
-                        </svg>
-                    </div>
-                    <div class="flex flex-col">
-                        <span class="text-base font-bold tracking-tight text-white leading-tight" style="color: #ffffff !important; font-size: 16px; font-weight: 700; line-height: 1.2;">VulnWatch</span>
-                        <!--<span class="text-[10px] font-mono tracking-wider text-slate-400 uppercase leading-none" style="color: #94a3b8 !important; font-size: 10px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.05em; margin-top: 2px;">PASSIVE VAPT &amp; ATTACK SURFACE</span>-->
-                    </div>
-                </a>
-
-                <nav class="nav-links flex items-center gap-2" aria-label="Primary">
+                <!-- Center: Navigation Buttons -->
+                <div style="display: flex !important; flex-direction: row !important; align-items: center !important; gap: 12px !important; flex-shrink: 0 !important;">
                     {% if session.get('user') or session.get('user_id') or is_guest %}
                     <a href="/dashboard" 
-                       class="inline-flex items-center px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-200 bg-slate-800/80 hover:bg-slate-700 hover:text-white border border-slate-700 transition shadow-sm {% if request.path == '/dashboard' %}bg-slate-700 text-white border-slate-600{% endif %}"
-                       style="display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 500; color: #e2e8f0; background: rgba(30, 41, 59, 0.8); border: 1px solid #334155; text-decoration: none;">
+                       style="display: inline-flex !important; align-items: center !important; padding: 7px 16px !important; font-size: 13px !important; font-weight: 600 !important; color: #e2e8f0 !important; background-color: #1e293b !important; border: 1px solid #334155 !important; border-radius: 8px !important; text-decoration: none !important; white-space: nowrap !important;">
                         Dashboard
                     </a>
                     {% endif %}
                     <a href="/scanner" 
                        id="nav-new-audit" 
-                       class="inline-flex items-center px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-200 bg-slate-800/80 hover:bg-slate-700 hover:text-white border border-slate-700 transition shadow-sm"
-                       style="display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 500; color: #e2e8f0; background: rgba(30, 41, 59, 0.8); border: 1px solid #334155; text-decoration: none;">
+                       style="display: inline-flex !important; align-items: center !important; padding: 7px 16px !important; font-size: 13px !important; font-weight: 600 !important; color: #e2e8f0 !important; background-color: #1e293b !important; border: 1px solid #334155 !important; border-radius: 8px !important; text-decoration: none !important; white-space: nowrap !important;">
                         New Audit
                     </a>
                     <a href="/api/docs" 
-                       class="inline-flex items-center px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-200 bg-slate-800/80 hover:bg-slate-700 hover:text-white border border-slate-700 transition shadow-sm"
-                       style="display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 500; color: #e2e8f0; background: rgba(30, 41, 59, 0.8); border: 1px solid #334155; text-decoration: none;">
+                       style="display: inline-flex !important; align-items: center !important; padding: 7px 16px !important; font-size: 13px !important; font-weight: 600 !important; color: #e2e8f0 !important; background-color: #1e293b !important; border: 1px solid #334155 !important; border-radius: 8px !important; text-decoration: none !important; white-space: nowrap !important;">
                         API Docs
                     </a>
-                </nav>
+                </div>
 
-                <div class="nav-right">
-                    <!-- Command Palette trigger -->
-                    <button class="palette-trigger text-slate-300 bg-slate-800/80 border border-slate-700 hover:bg-slate-700 hover:text-white transition-colors duration-200" id="palette-btn" data-palette-open aria-label="Open command palette" title="Quick navigation (Ctrl+K)">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                        <span class="palette-trigger-label text-slate-300">Search</span>
-                        <kbd class="bg-slate-700 text-slate-300 border-slate-600">⌘K</kbd>
+                <!-- Right: Search, Theme Toggle, Env & Sign In / User Auth -->
+                <div style="display: flex !important; flex-direction: row !important; align-items: center !important; gap: 12px !important; flex-shrink: 0 !important;">
+                    <button class="palette-trigger" id="palette-btn" data-palette-open aria-label="Open command palette" title="Quick navigation (Ctrl+K)" style="display: inline-flex !important; align-items: center !important; gap: 8px !important; padding: 7px 14px !important; background-color: #1e293b !important; border: 1px solid #334155 !important; border-radius: 8px !important; color: #94a3b8 !important; font-size: 13px !important; cursor: pointer !important; white-space: nowrap !important;">
+                        Search <span style="font-size: 11px !important; background-color: #0b0f17 !important; padding: 2px 6px !important; border-radius: 4px !important; border: 1px solid #334155 !important; color: #cbd5e1 !important;">⌘K</span>
                     </button>
 
-                    <!-- Theme toggle -->
-                    <button class="theme-toggle text-slate-300 bg-slate-800/80 border border-slate-700 hover:bg-slate-700 hover:text-white transition-colors duration-200" id="theme-toggle" aria-label="Toggle dark/light theme" title="Toggle theme">
-                        <!-- Moon icon (shown in light mode) -->
-                        <svg class="icon-moon text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    <button id="themeToggle" type="button" aria-label="Toggle Theme" style="display: inline-flex !important; align-items: center !important; justify-content: center !important; width: 34px !important; height: 34px !important; background-color: #1e293b !important; border: 1px solid #334155 !important; border-radius: 8px !important; color: #94a3b8 !important; cursor: pointer !important;">
+                        <!-- Moon Icon (Visible in Light Mode) -->
+                        <svg id="themeMoonIcon" style="width: 16px; height: 16px; display: block;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
                         </svg>
-                        <!-- Sun icon (shown in dark mode) -->
-                        <svg class="icon-sun text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="5"/>
-                            <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                        <!-- Sun Icon (Visible in Dark Mode) -->
+                        <svg id="themeSunIcon" style="width: 16px; height: 16px; display: none;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
                         </svg>
                     </button>
 
                     {% set is_local = 'localhost' in request.host or '127.0.0.1' in request.host or request.host.startswith('0.0.0.0') %}
-                    <span class="env-badge {% if not is_local %}is-remote{% endif %}" title="{{ request.host }}">
-                        <span class="dot" aria-hidden="true"></span>
-                        {{ 'LOCAL ENV' if is_local else 'REMOTE HOST' }}
+                    <span style="display: inline-flex !important; align-items: center !important; gap: 6px !important; padding: 5px 12px !important; border-radius: 9999px !important; font-family: monospace !important; font-size: 11px !important; font-weight: 600 !important; background: rgba(16, 185, 129, 0.1) !important; color: #34d399 !important; border: 1px solid rgba(16, 185, 129, 0.2) !important; white-space: nowrap !important;">
+                        <span style="width: 6px !important; height: 6px !important; border-radius: 9999px !important; background-color: #34d399 !important;"></span>
+                        LOCAL ENV
                     </span>
 
-                    <!-- Auth: Tier 3 (Google) / Tier 2 (Guest) / Tier 1 (Anonymous) -->
                     {% if session.get('user') %}
-                        {# ── Tier 3: Google authenticated user ── #}
                         <div class="user-menu" id="user-menu">
-                            <button class="user-avatar-btn border-slate-700" id="user-avatar-btn"
-                                    aria-haspopup="true" aria-expanded="false"
-                                    title="{{ session['user'].get('name', 'Account') }}">
+                            <button class="user-avatar-btn border-slate-700" id="user-avatar-btn" aria-haspopup="true" aria-expanded="false" title="{{ session['user'].get('name', 'Account') }}">
                                 {% if session['user'].get('picture') %}
-                                    <img src="{{ session['user']['picture'] }}"
-                                         alt="{{ session['user'].get('name', 'User') }}"
-                                         class="user-avatar-img">
+                                    <img src="{{ session['user']['picture'] }}" alt="{{ session['user'].get('name', 'User') }}" class="user-avatar-img">
                                 {% else %}
                                     <span class="user-avatar-initials bg-slate-800 text-white">{{ (session['user'].get('name') or 'U')[0].upper() }}</span>
                                 {% endif %}
@@ -112,28 +95,16 @@
                                     <strong class="text-white">{{ session['user'].get('name', 'Signed In') }}</strong>
                                     <small class="text-slate-400">{{ session['user'].get('email', '') }}</small>
                                 </div>
-                                <a href="/settings" class="user-dropdown-item text-slate-300 hover:bg-slate-800 hover:text-white">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="margin-right:0.4rem"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                                    Settings &amp; API Keys
-                                </a>
-                                <a href="/profile" class="user-dropdown-item text-slate-300 hover:bg-slate-800 hover:text-white">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="margin-right:0.4rem"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                    My Profile &amp; Scans
-                                </a>
+                                <a href="/settings" class="user-dropdown-item text-slate-300 hover:bg-slate-800 hover:text-white">Settings &amp; API Keys</a>
+                                <a href="/profile" class="user-dropdown-item text-slate-300 hover:bg-slate-800 hover:text-white">My Profile &amp; Scans</a>
                                 <div class="user-dropdown-divider border-t border-slate-800"></div>
-                                <a href="/auth/logout" class="user-dropdown-item user-dropdown-item--danger text-red-400 hover:bg-red-500/10">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="margin-right:0.4rem"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                                    Sign Out
-                                </a>
+                                <a href="/auth/logout" class="user-dropdown-item user-dropdown-item--danger text-red-400 hover:bg-red-500/10">Sign Out</a>
                             </div>
                         </div>
 
                     {% elif is_guest %}
-                        {# ── Tier 2: Guest mode — interactive dropdown with log out ── #}
                         <div class="user-menu guest-menu" id="guest-menu">
-                            <button class="guest-quota-btn text-slate-200 bg-slate-800/80 border border-slate-700 hover:bg-slate-700 hover:text-white transition-colors duration-200" id="guest-menu-btn"
-                                    aria-haspopup="true" aria-expanded="false"
-                                    title="Guest session options">
+                            <button class="guest-quota-btn text-slate-200 bg-slate-800/80 border border-slate-700 hover:bg-slate-700 hover:text-white transition-colors duration-200" id="guest-menu-btn" aria-haspopup="true" aria-expanded="false" title="Guest session options">
                                 {% if guest_scans_left > 0 %}
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
                                     Guest&thinsp;&mdash;&thinsp;{{ guest_scans_left }}&thinsp;/&thinsp;{{ guest_scan_limit }}
@@ -149,36 +120,26 @@
                                     <strong class="text-white">Guest Account</strong>
                                     <small class="text-slate-400">{{ guest_scans_left }}&thinsp;/&thinsp;{{ guest_scan_limit }} free audits remaining</small>
                                 </div>
-                                <a href="/auth/login" class="user-dropdown-item text-slate-300 hover:bg-slate-800 hover:text-white">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="margin-right:0.4rem"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-                                    Sign In with Google
-                                </a>
+                                <a href="/auth/login" class="user-dropdown-item text-slate-300 hover:bg-slate-800 hover:text-white">Sign In with Google</a>
                                 <div class="user-dropdown-divider border-t border-slate-800"></div>
-                                <a href="/auth/logout" class="user-dropdown-item user-dropdown-item--danger text-red-400 hover:bg-red-500/10">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="margin-right:0.4rem"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                                    Log Out / Reset Guest
-                                </a>
+                                <a href="/auth/logout" class="user-dropdown-item user-dropdown-item--danger text-red-400 hover:bg-red-500/10">Log Out / Reset Guest</a>
                             </div>
                         </div>
 
                     {% else %}
-                        {# ── Tier 1: Anonymous visitor — simple sign-in button ── #}
-                        <a href="/auth/login" class="nav-signin-btn nav-signin-btn--anon bg-indigo-600 hover:bg-indigo-500 text-white transition-colors duration-200 shadow-sm"
-                           id="nav-signin-anon" title="Sign in or continue as guest">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                        <a href="{{ url_for('auth.login') }}" style="display: inline-flex !important; align-items: center !important; gap: 6px !important; padding: 7px 18px !important; background-color: #4f46e5 !important; color: #ffffff !important; font-size: 13px !important; font-weight: 600 !important; border-radius: 8px !important; text-decoration: none !important; white-space: nowrap !important;">
+                            <svg style="width: 14px !important; height: 14px !important;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
                             Sign In
                         </a>
                     {% endif %}
-
                 </div>
-            </div>
-        </header>
 
-        <main class="page">
-            <div class="container">
-                {% block content %}{% endblock %}
             </div>
-        </main>
+        </nav>
+
+        <div class="page-content-wrapper flex-1">
+            {% block content %}{% endblock %}
+        </div>
 
         <footer class="site-footer">
             <div class="container footer-inner">
@@ -237,17 +198,39 @@
     <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
     <script src="{{ url_for('static', filename='js/palette.js') }}"></script>
     <script>
-        // Theme toggle
-        (function() {
-            var btn = document.getElementById('theme-toggle');
-            if (!btn) return;
-            btn.addEventListener('click', function() {
-                var html = document.documentElement;
-                var current = html.getAttribute('data-theme') || 'light';
-                var next = current === 'light' ? 'dark' : 'light';
-                html.setAttribute('data-theme', next);
-                localStorage.setItem('wg-theme', next);
-            });
+        // Theme Toggle Engine & Persistence
+        (function () {
+            const root = document.documentElement;
+            const toggleBtn = document.getElementById('themeToggle');
+            const moonIcon = document.getElementById('themeMoonIcon');
+            const sunIcon = document.getElementById('themeSunIcon');
+
+            function applyTheme(theme) {
+                if (theme === 'dark') {
+                    root.classList.add('dark');
+                    root.setAttribute('data-theme', 'dark');
+                    if (moonIcon) moonIcon.style.display = 'none';
+                    if (sunIcon) sunIcon.style.display = 'block';
+                } else {
+                    root.classList.remove('dark');
+                    root.setAttribute('data-theme', 'light');
+                    if (moonIcon) moonIcon.style.display = 'block';
+                    if (sunIcon) sunIcon.style.display = 'none';
+                }
+                localStorage.setItem('vw_theme', theme);
+                localStorage.setItem('wg-theme', theme);
+            }
+
+            const currentTheme = localStorage.getItem('vw_theme') || localStorage.getItem('wg-theme') || 
+                (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            applyTheme(currentTheme);
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function () {
+                    const isDark = root.classList.contains('dark') || root.getAttribute('data-theme') === 'dark';
+                    applyTheme(isDark ? 'light' : 'dark');
+                });
+            }
         })();
 
         // Shared dropdown controller — handles both Google avatar and Guest menus
