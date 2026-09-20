@@ -117,6 +117,14 @@ def _run_migrations(database_uri: str):
                     text("ALTER TABLE findings ADD COLUMN triage_notes TEXT")
                 )
 
+            result = conn.execute(text("PRAGMA table_info(users)"))
+            user_columns = {row[1] for row in result}
+
+            if "api_key" not in user_columns:
+                conn.execute(
+                    text("ALTER TABLE users ADD COLUMN api_key VARCHAR(128)")
+                )
+
             result = conn.execute(text("PRAGMA table_info(scans)"))
             scan_columns = {row[1] for row in result}
 
@@ -169,6 +177,11 @@ def _run_migrations(database_uri: str):
 
             if not _pg_has_column(conn, "findings", "triage_notes"):
                 conn.execute(text("ALTER TABLE findings ADD COLUMN triage_notes TEXT"))
+
+            if not _pg_has_column(conn, "users", "api_key"):
+                conn.execute(
+                    text("ALTER TABLE users ADD COLUMN api_key VARCHAR(128)")
+                )
 
             if not _pg_has_column(conn, "scans", "user_id"):
                 conn.execute(

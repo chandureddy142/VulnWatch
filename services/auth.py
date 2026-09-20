@@ -41,54 +41,65 @@ def _provided_api_key() -> str:
     return ""
 
 
+def get_user_by_api_key(key: str):
+    """Retrieve Google User record matching an API key, or None."""
+    if not key or not key.strip():
+        return None
+    from database.db import get_session
+    from database.models import User
+    try:
+        db = get_session()
+        return db.query(User).filter(User.api_key == key.strip()).first()
+    except Exception:
+        return None
+
+
 def require_api_key(view):
-    """Require API key via Header, Session, or Cookie for a view."""
+    """Require API key via Header, Session, or Cookie for a view.
+    
+    Accepts configured server key OR a valid Google user API key.
+    """
     @wraps(view)
     def wrapped(*args, **kwargs):
-        expected = _configured_api_key()
-        if not expected:
-            return jsonify({"error": "API authentication is not configured."}), 503
         supplied = _provided_api_key()
-        if not supplied or not hmac.compare_digest(supplied, expected):
+        if not supplied:
             return jsonify({"error": "Authentication required."}), 401
-        return view(*args, **kwargs)
+
+        # Check DB user API key first
+        user = get_user_by_api_key(supplied)
+        if user:
+            return view(*args, **kwargs)
+
+        expected = _configured_api_key()
+        if expected and hmac.compare_digest(supplied, expected):
+            return view(*args, **kwargs)
+
+        return jsonify({"error": "Authentication required."}), 401
 
     return wrapped
 
 
 def require_api_key_or_browser(view):
-    """Flexible auth decorator for scan endpoints reachable from both the browser UI and the API.
-
-    Rules:
-    - If the request carries a valid API key (header / session / cookie) → allow.
-    - If *no* API key is configured on the server → allow (dev / first-run mode).
-    - If the request is a browser-initiated form or JSON POST **without** an
-      explicit API key header → allow (quota is enforced by the route itself
-      via guest_device_id cookie logic).
-    - If an API key IS configured AND the caller supplies one that does NOT match
-      → reject with 401 (protects the programmatic API).
-    """
+    """Flexible auth decorator for scan endpoints reachable from both the browser UI and the API."""
     @wraps(view)
     def wrapped(*args, **kwargs):
-        expected = _configured_api_key()
+        supplied = _provided_api_key()
 
-        # No key configured → open access (dev mode / unconfigured instance)
+        if supplied:
+            user = get_user_by_api_key(supplied)
+            if user:
+                return view(*args, **kwargs)
+
+            expected = _configured_api_key()
+            if expected and hmac.compare_digest(supplied, expected):
+                return view(*args, **kwargs)
+
+            return jsonify({"error": "Authentication required."}), 401
+
+        expected = _configured_api_key()
         if not expected:
             return view(*args, **kwargs)
 
-        supplied = _provided_api_key()
-
-        # Key supplied and matches → allow
-        if supplied and hmac.compare_digest(supplied, expected):
-            return view(*args, **kwargs)
-
-        # Key supplied but wrong → always reject
-        if supplied:
-            return jsonify({"error": "Authentication required."}), 401
-
-        # No key supplied — allow browser sessions through; the route enforces
-        # guest quotas via cookie.  Programmatic callers that want access should
-        # provide a key.
         return view(*args, **kwargs)
 
     return wrapped

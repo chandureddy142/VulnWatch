@@ -59,7 +59,7 @@ def test_settings_routes(app_client):
     assert res_key.status_code == 200
     key_data = res_key.get_json()
     assert "api_key" in key_data
-    assert key_data["api_key"].startswith("wg_")
+    assert key_data["api_key"].startswith(("vw_live_", "wg_"))
 
 
 def test_scan_trigger_unauthorized(app_client):
@@ -308,7 +308,7 @@ def test_settings_generate_api_key_blocked_for_api_guests(app_client):
         json={},
     )
     # login_required fires before the route handler
-    assert res.status_code in (401,)
+    assert res.status_code in (401, 403)
     data = res.get_json()
     assert data is not None
     assert "redirect" in data

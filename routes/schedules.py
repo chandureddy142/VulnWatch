@@ -28,7 +28,11 @@ def list_schedules():
 
 @schedules_bp.route("/create", methods=["POST"])
 def create_schedule():
-    """Create a new recurring audit schedule."""
+    """Create a new recurring audit schedule (Google authenticated users only)."""
+    user_id = session.get("user_id")
+    if not user_id or session.get("is_guest"):
+        return jsonify({"error": "Google Sign-In required to configure alert webhooks and automated schedules"}), 403
+
     data = request.get_json() or request.form
     target_url = data.get("target_url", "").strip()
     cadence_str = data.get("cadence", "weekly").strip().lower()
@@ -48,7 +52,7 @@ def create_schedule():
 
     db = get_session()
     schedule = ScheduledAudit(
-        user_id=session.get("user_id"),
+        user_id=user_id,
         target_url=target_url,
         cadence=cadence_enum,
         last_run=None,

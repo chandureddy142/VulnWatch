@@ -57,6 +57,7 @@ class User(Base):
     email = Column(String(320), unique=True, nullable=False)
     name = Column(String(255), nullable=True)
     picture = Column(String(2048), nullable=True)
+    api_key = Column(String(128), unique=True, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     scans = relationship("Scan", back_populates="user", cascade="all, delete-orphan")

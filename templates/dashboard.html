@@ -300,10 +300,15 @@
 </div>
 
 <!-- 5. Recurring Schedules Manager -->
+{% set is_google_user = session.get('user_id') and not session.get('is_guest') %}
 <div class="panel" style="margin-top: 24px;">
     <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px;">
         <h2 style="font-size: 16px; font-weight: 700; margin: 0; color: var(--text-1);">Recurring Audit Schedules</h2>
+        {% if is_google_user %}
         <button type="button" class="btn btn-sm btn-primary" onclick="document.getElementById('schedule-modal').style.display='flex'">+ New Schedule</button>
+        {% else %}
+        <a href="/auth/login?next=/dashboard" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 text-slate-300 border border-slate-700 hover:border-indigo-500 rounded-lg text-xs font-semibold" style="text-decoration: none;">🔒 + New Schedule (Google Only)</a>
+        {% endif %}
     </div>
     <div class="table-responsive">
         <table class="data-table">
@@ -334,7 +339,13 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="5" class="table-empty">No recurring audit schedules configured. <a href="#" onclick="document.getElementById('schedule-modal').style.display='flex'; return false;">Create one now</a>.</td>
+                    <td colspan="5" class="table-empty" style="padding: 24px; text-align: center;">
+                        {% if is_google_user %}
+                        No recurring audit schedules configured. <a href="#" onclick="document.getElementById('schedule-modal').style.display='flex'; return false;">Create one now</a>.
+                        {% else %}
+                        Automated recurring audits, email alerts, and Discord/Slack webhooks are exclusive to Google-authenticated accounts. <a href="/auth/login" style="color: #818cf8; font-weight: 600; text-decoration: underline;">Sign in with Google</a> to automate your security monitoring.
+                        {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

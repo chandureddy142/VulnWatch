@@ -96,28 +96,58 @@
                 </div>
             </div>
 
-            {% if session.get('user') %}
+            {% set is_google_user = session.get('user_id') and not session.get('is_guest') %}
 
-            <hr style="border: none; border-top: 1px solid var(--border-soft); margin: 24px 0;">
+            {% if is_google_user %}
+
+            <hr style="border: none; border-top: 1px solid var(--border-soft); margin: 28px 0;">
 
             <div class="form-group" style="margin-bottom: 24px;">
-                <label>REST API Access Key</label>
-                <div style="display: flex; gap: 10px; align-items: center;">
+                <label style="font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+                    Developer REST API Access Key
+                </label>
+                <div style="display: flex; gap: 10px; align-items: center; margin-top: 8px;">
                     <input
-                        type="text"
+                        type="password"
                         id="api_key_display"
                         class="mono"
                         value="{{ settings.api_key or 'No API key generated' }}"
                         readonly
-                        style="flex: 1; background: var(--bg-card); color: var(--brand);">
-                    <button type="button" id="btn-copy-key" class="btn btn-secondary btn-sm">
+                        style="flex: 1; background: #0f172a; border: 1px solid #334155; color: #818cf8; padding: 9px 14px; border-radius: 8px;">
+                    <button type="button" id="btn-toggle-key-visibility" class="btn btn-secondary btn-sm" style="white-space: nowrap;">
+                        Reveal
+                    </button>
+                    <button type="button" id="btn-copy-key" class="btn btn-secondary btn-sm" style="white-space: nowrap;">
                         Copy
                     </button>
-                    <button type="button" id="btn-generate-key" class="btn btn-secondary btn-sm">
+                    <button type="button" id="btn-generate-key" class="btn btn-secondary btn-sm" style="white-space: nowrap;">
                         Regenerate Key
                     </button>
                 </div>
-                <div class="form-hint">Use this bearer key to authenticate automated programmatic scan triggers via HTTP API.</div>
+                <div class="form-hint" style="margin-top: 8px;">Use this bearer key to authenticate automated programmatic scan triggers via HTTP API (<code class="mono" style="color: #818cf8;">POST /api/v1/scan</code>).</div>
+            </div>
+
+            <!-- GitHub Actions CI/CD Snippet -->
+            <div style="background: #090d16; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 28px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                    <span style="font-size: 13px; font-weight: 700; color: #f8fafc; font-family: monospace;">// GitHub Actions CI/CD Pipeline Integration</span>
+                    <span class="badge-status info" style="font-size: 11px;">POST /api/v1/scan</span>
+                </div>
+                <pre style="background: #020617; border: 1px solid #1e293b; border-radius: 8px; padding: 14px; color: #38bdf8; font-family: 'JetBrains Mono', monospace; font-size: 12px; overflow-x: auto; margin: 0; line-height: 1.5;"># .github/workflows/vulnwatch-audit.yml
+name: VulnWatch VAPT Audit Pipeline
+on: [push, pull_request]
+
+jobs:
+  vapt_security_audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Execute VulnWatch Posture Audit
+        run: |
+          curl -X POST https://vulnwatch.chandureddy.in/api/v1/scan \
+            -H "Authorization: Bearer ${{ '${{ secrets.VW_API_KEY }}' }}" \
+            -H "Content-Type: application/json" \
+            -d '{"target": "https://example.com", "fail_below_score": 75}'</pre>
             </div>
 
             <div class="form-actions" style="margin-top: 24px;">
@@ -127,6 +157,21 @@
             </div>
 
             {% else %}
+
+            <!-- Locked Developer API Access Card for Guests -->
+            <div style="position: relative; background: rgba(15, 23, 42, 0.9); border: 1px solid #334155; border-radius: 16px; padding: 32px 24px; text-align: center; margin-top: 28px; backdrop-filter: blur(8px); overflow: hidden;">
+                <div style="width: 48px; height: 48px; margin: 0 auto 16px auto; border-radius: 12px; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); display: flex; align-items: center; justify-content: center; color: #818cf8;">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <h3 style="color: #ffffff; font-size: 18px; font-weight: 700; margin: 0 0 8px 0;">Developer API &amp; CI/CD Integration Locked</h3>
+                <p style="color: #94a3b8; font-size: 13px; max-width: 480px; margin: 0 auto 20px auto; line-height: 1.5;">
+                    Sign in with Google to generate API tokens for GitHub Actions, GitLab CI, and programmatic security auditing.
+                </p>
+                <a href="{{ url_for('auth.login') }}" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; padding: 10px 22px; font-weight: 600;">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+                    Sign In with Google
+                </a>
+            </div>
 
             <div class="form-actions" style="margin-top: 24px;">
                 <button type="submit" id="btn-save-settings" class="btn btn-primary" disabled title="Sign in to save enterprise settings">
@@ -222,6 +267,19 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    const toggleKeyBtn = document.getElementById('btn-toggle-key-visibility');
+    if (toggleKeyBtn && apiKeyInput) {
+        toggleKeyBtn.addEventListener('click', function () {
+            if (apiKeyInput.type === 'password') {
+                apiKeyInput.type = 'text';
+                toggleKeyBtn.textContent = 'Hide';
+            } else {
+                apiKeyInput.type = 'password';
+                toggleKeyBtn.textContent = 'Reveal';
+            }
+        });
+    }
+
     // 2. Added Copy handler
     if (copyKeyBtn && apiKeyInput) {
         copyKeyBtn.addEventListener('click', function () {
@@ -245,8 +303,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     copyKeyBtn.textContent = originalText;
                 }, 2000);
             }).catch(function () {
+                apiKeyInput.type = 'text';
                 apiKeyInput.select();
                 document.execCommand('copy');
+                apiKeyInput.type = 'password';
                 if (window.showToast) {
                     window.showToast('API key copied to clipboard!', 'success');
                 }

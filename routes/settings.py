@@ -102,36 +102,76 @@ def save_settings_route():
 
 
 @settings_bp.route("/generate-api-key", methods=["POST"])
-@login_required
 def generate_api_key():
-    """Generate and persist a new random API key (authenticated users only)."""
-    # JSON/API callers that somehow bypass login_required get a structured 401
-    if request.is_json and not session.get("user_id"):
+    """Generate and persist a new random API key (Google authenticated users only)."""
+    user_id = session.get("user_id")
+    if not user_id or session.get("is_guest"):
         return jsonify({
-            "error": "Authentication required.",
+            "error": "Google Sign-In required",
             "message": "Sign in with Google to generate API keys.",
             "redirect": url_for("auth.login", reason="settings", _external=False),
-        }), 401
+        }), 403
+
+    from database.db import get_session
+    from database.models import User
+
+    db = get_session()
+    user = db.query(User).filter_by(id=user_id).first()
+    if not user:
+        user_email = (session.get("user") or {}).get("email") or f"user_{user_id}@example.com"
+        user_name = (session.get("user") or {}).get("name") or "User"
+        user = User(id=user_id, email=user_email, name=user_name)
+        db.add(user)
+        db.commit()
+
+    new_key = f"vw_live_{secrets.token_hex(16)}"
+    user.api_key = new_key
+    db.commit()
+
     settings = load_settings()
-    new_key = f"wg_{secrets.token_hex(24)}"
     settings["api_key"] = new_key
     save_settings(settings)
-
-    # Bind new key directly to current browser session
     session["api_key"] = new_key
 
     response = make_response(jsonify({
         "status": "success",
         "api_key": new_key,
-        "key": new_key
+        "key": new_key,
+        "message": "API key generated successfully."
     }))
     
-    # Bind new key as HTTP-only cookie
     response.set_cookie(
         "api_key",
         new_key,
-        max_age=60 * 60 * 24 * 30,  # 30 days
+        max_age=60 * 60 * 24 * 30,
         httponly=True,
         samesite="Lax",
     )
     return response
+
+
+@settings_bp.route("/revoke-api-key", methods=["POST"])
+def revoke_api_key():
+    """Revoke API key for the current Google authenticated user."""
+    user_id = session.get("user_id")
+    if not user_id or session.get("is_guest"):
+        return jsonify({
+            "error": "Google Sign-In required",
+            "message": "Sign in with Google to revoke API keys.",
+        }), 403
+
+    from database.db import get_session
+    from database.models import User
+
+    db = get_session()
+    user = db.query(User).filter_by(id=user_id).first()
+    if user:
+        user.api_key = None
+        db.commit()
+
+    settings = load_settings()
+    settings["api_key"] = ""
+    save_settings(settings)
+    session.pop("api_key", None)
+
+    return jsonify({"message": "API key revoked successfully."})

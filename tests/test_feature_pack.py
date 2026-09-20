@@ -56,7 +56,7 @@ def test_schedules_and_scheduler(app_client):
     db = get_session()
     now = datetime.utcnow() - timedelta(minutes=5)
     sched = ScheduledAudit(
-        target_url="https://scheduled-test.com",
+        target_url="https://8.8.8.8",
         cadence=CadenceType.daily,
         next_run=now,
         status=ScheduleStatus.active,
@@ -74,9 +74,14 @@ def test_schedules_and_scheduler(app_client):
     data = res_list.get_json()
     assert "schedules" in data
 
+    with app_client.session_transaction() as sess:
+        sess["user_id"] = 777
+        sess["user"] = {"id": 777, "email": "test@example.com"}
+        sess.pop("is_guest", None)
+
     res_create = app_client.post(
         "/schedules/create",
-        json={"target_url": "https://new-schedule.com", "cadence": "weekly"},
+        json={"target_url": "https://8.8.8.8", "cadence": "weekly"},
         headers=API_HEADERS
     )
     assert res_create.status_code == 201

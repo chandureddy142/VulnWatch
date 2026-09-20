@@ -1,7 +1,10 @@
+import hmac
+import secrets
+from datetime import datetime
 from flask import Blueprint, jsonify, render_template, request, session
 from database.db import get_session
-from database.models import Finding, Scan, ScanStatus, SeverityLevel
-from services.auth import require_api_key
+from database.models import Finding, Scan, ScanStatus, SeverityLevel, User
+from services.auth import require_api_key, _provided_api_key, get_user_by_api_key, _configured_api_key
 from utils.privacy import check_scan_ownership
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
@@ -11,6 +14,147 @@ api_bp = Blueprint("api", __name__, url_prefix="/api")
 def api_docs():
     """Render enterprise API documentation page."""
     return render_template("api_docs.html")
+
+
+@api_bp.route("/keys/generate", methods=["POST"])
+@api_bp.route("/v1/keys/generate", methods=["POST"])
+def generate_key_api():
+    """Generate developer API key for Google authenticated users."""
+    user_id = session.get("user_id")
+    if not user_id or session.get("is_guest"):
+        return jsonify({"error": "Google Sign-In required"}), 403
+
+    db = get_session()
+    user = db.query(User).filter_by(id=user_id).first()
+    if not user:
+        user_email = (session.get("user") or {}).get("email") or f"user_{user_id}@example.com"
+        user_name = (session.get("user") or {}).get("name") or "User"
+        user = User(id=user_id, email=user_email, name=user_name)
+        db.add(user)
+        db.commit()
+
+    new_key = f"vw_live_{secrets.token_hex(16)}"
+    user.api_key = new_key
+    db.commit()
+
+    return jsonify({
+        "status": "success",
+        "api_key": new_key,
+        "key": new_key,
+        "message": "API key generated successfully."
+    })
+
+
+@api_bp.route("/keys/revoke", methods=["POST"])
+@api_bp.route("/v1/keys/revoke", methods=["POST"])
+def revoke_key_api():
+    """Revoke developer API key for Google authenticated users."""
+    user_id = session.get("user_id")
+    if not user_id or session.get("is_guest"):
+        return jsonify({"error": "Google Sign-In required"}), 403
+
+    db = get_session()
+    user = db.query(User).filter_by(id=user_id).first()
+    if user:
+        user.api_key = None
+        db.commit()
+
+    return jsonify({"status": "success", "message": "API key revoked successfully."})
+
+
+@api_bp.route("/v1/scan", methods=["POST"])
+def ci_cd_scan_endpoint():
+    """Authenticated CI/CD programmatic scan endpoint.
+
+    Requires Bearer or X-API-Key header associated with a Google-authenticated account.
+    """
+    from scanner.engine import ScanEngine
+    from scanner.target import validate_target_url, TargetValidationError
+    from routes.dashboard import _compute_posture_score
+
+    key = _provided_api_key()
+    if not key:
+        return jsonify({
+            "error": "401 Unauthorized",
+            "message": "Valid Google-authenticated developer API key required."
+        }), 401
+
+    db = get_session()
+    user = get_user_by_api_key(key)
+
+    if not user and key:
+        expected = _configured_api_key()
+        if expected and hmac.compare_digest(key, expected):
+            user = db.query(User).first()
+            if not user:
+                user = User(email="admin@example.com", name="Admin", api_key=key)
+                db.add(user)
+                db.commit()
+
+    if not user:
+        return jsonify({
+            "error": "401 Unauthorized",
+            "message": "Valid Google-authenticated developer API key required."
+        }), 401
+
+    data = request.get_json() or request.form.to_dict() or {}
+    target_url = (data.get("target") or data.get("target_url") or "").strip()
+    fail_below_score = int(data.get("fail_below_score", 75))
+
+    if not target_url:
+        return jsonify({"error": "Target URL is required."}), 400
+
+    try:
+        validated_target = validate_target_url(target_url, allow_localhost=True)
+    except TargetValidationError as err:
+        return jsonify({"error": "Invalid target URL", "details": str(err)}), 400
+
+    engine = ScanEngine(allow_localhost=True)
+    scan = engine.execute_scan(
+        validated_target,
+        is_authenticated_user=True
+    )
+    if user and hasattr(user, 'id') and user.id:
+        scan.user_id = user.id
+        db.commit()
+
+    db.refresh(scan)
+    score = _compute_posture_score(
+        scan.critical_count, scan.high_count, scan.medium_count, scan.low_count
+    )
+
+    status_result = "PASS" if score >= fail_below_score else "FAIL"
+
+    findings = db.query(Finding).filter_by(scan_id=scan.id).all()
+    formatted_findings = []
+    for f in findings:
+        formatted_findings.append({
+            "id": f.id,
+            "title": f.title,
+            "severity": f.severity.value if f.severity else "INFO",
+            "category": f.category,
+            "description": f.description,
+            "remediation": f.remediation,
+            "affected_url": f.affected_url,
+            "cwe_id": getattr(f, "cwe_id", "CWE-200"),
+            "owasp_category": getattr(f, "owasp_category", "A05:2021-Security Misconfiguration"),
+        })
+
+    return jsonify({
+        "status": status_result,
+        "target": scan.target_url,
+        "posture_score": score,
+        "fail_below_score": fail_below_score,
+        "scan_id": scan.id,
+        "summary": {
+            "critical": scan.critical_count,
+            "high": scan.high_count,
+            "medium": scan.medium_count,
+            "low": scan.low_count,
+            "info": scan.info_count
+        },
+        "findings": formatted_findings
+    }), 200
 
 
 @api_bp.route("/scans", methods=["GET"])
