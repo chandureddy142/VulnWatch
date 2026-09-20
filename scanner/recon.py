@@ -87,6 +87,7 @@ class ReconResult:
 
     target_host: str
     ct_subdomains: List[str] = field(default_factory=list)
+    probed_subdomains: List[Dict[str, Any]] = field(default_factory=list)
     spf_record: Optional[str] = None
     dmarc_record: Optional[str] = None
     dkim_selectors_found: List[str] = field(default_factory=list)
@@ -121,7 +122,7 @@ def run_passive_recon(
     host = parsed.hostname or ""
     result = ReconResult(target_host=host)
 
-    # 1. Certificate Transparency subdomain enumeration
+    # 1. Certificate Transparency subdomain enumeration & DNS health probing
     _enumerate_ct_subdomains(host, result, timeout)
 
     # 2. DNS security auditing (SPF/DMARC/DKIM/CNAME)
@@ -141,14 +142,24 @@ def run_passive_recon(
 # ---------------------------------------------------------------------------
 
 def _enumerate_ct_subdomains(host: str, result: ReconResult, timeout: int) -> None:
-    """Query crt.sh public CT logs to discover subdomains for the target host."""
+    """Query crt.sh public CT logs to discover and DNS-probe subdomains for the target host."""
     if not host:
         return
 
     try:
-        from scanner.subdomains import fetch_crt_subdomains
-        subdomains = fetch_crt_subdomains(host, timeout=min(6, timeout))
-        result.ct_subdomains = subdomains
+        from scanner.subdomains import discover_subdomains
+        probed_assets = discover_subdomains(host, timeout=min(6, timeout))
+        result.probed_subdomains = probed_assets
+        result.ct_subdomains = [a["subdomain"] for a in probed_assets]
+
+        # Extract dangling CNAME risks discovered during DNS probing
+        for asset in probed_assets:
+            if asset.get("status") == "Dangling CNAME":
+                result.dangling_cnames.append({
+                    "subdomain": asset["subdomain"],
+                    "cname_target": asset.get("cname_target") or "Unknown",
+                    "status": "Does Not Resolve — Subdomain Takeover Risk",
+                })
 
         if len(result.ct_subdomains) > 10:
             result.findings.append(

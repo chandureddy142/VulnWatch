@@ -63,16 +63,92 @@ def fetch_crt_subdomains(target_url_or_host: str, timeout: int = 6) -> List[str]
     return clean_list
 
 
+from concurrent.futures import ThreadPoolExecutor
+import socket
+
+DANGLING_PATTERNS = [
+    r"\.s3\.amazonaws\.com$",
+    r"\.s3-[a-z0-9-]+\.amazonaws\.com$",
+    r"\.elasticbeanstalk\.com$",
+    r"\.azurewebsites\.net$",
+    r"\.cloudapp\.azure\.com$",
+    r"\.github\.io$",
+    r"\.myshopify\.com$",
+    r"\.pantheonsite\.io$",
+    r"\.readthedocs\.io$",
+    r"\.surge\.sh$",
+    r"\.netlify\.app$",
+    r"\.vercel\.app$",
+    r"\.firebaseapp\.com$",
+    r"\.fastly\.net$",
+]
+
+
+def probe_subdomain(subdomain: str, timeout: float = 1.5) -> Dict[str, Any]:
+    """Perform a lightweight DNS probe to test if a subdomain resolves, and check for CNAME target."""
+    ip_address = None
+    is_alive = False
+    cname_target = None
+    status = "Unresolved"
+
+    # 1. Probe A/AAAA resolution via socket
+    try:
+        sock_timeout = socket.getdefaulttimeout()
+        socket.setdefaulttimeout(timeout)
+        addr_info = socket.getaddrinfo(subdomain, None, socket.AF_UNSPEC, socket.SOCK_STREAM)
+        socket.setdefaulttimeout(sock_timeout)
+
+        if addr_info:
+            is_alive = True
+            ip_address = addr_info[0][4][0]
+            status = "Live"
+    except Exception:
+        is_alive = False
+
+    # 2. If unresolved, check for CNAME record and dangling cloud patterns
+    if not is_alive:
+        try:
+            import dns.resolver
+            resolver = dns.resolver.Resolver()
+            resolver.lifetime = timeout
+            answers = resolver.resolve(subdomain, "CNAME")
+            if answers:
+                cname_target = str(answers[0].target).rstrip(".")
+                for pattern in DANGLING_PATTERNS:
+                    if re.search(pattern, cname_target, re.IGNORECASE):
+                        status = "Dangling CNAME"
+                        break
+        except Exception:
+            pass
+
+    return {
+        "subdomain": subdomain,
+        "is_alive": is_alive,
+        "ip_address": ip_address,
+        "cname_target": cname_target,
+        "status": status,
+    }
+
+
 def discover_subdomains(target_url_or_host: str, timeout: int = 6) -> List[Dict[str, Any]]:
-    """Query CT logs via crt.sh for passive subdomain discovery."""
+    """Query CT logs via crt.sh for passive subdomain discovery and perform parallel DNS resolution probing."""
     subs = fetch_crt_subdomains(target_url_or_host, timeout=timeout)
     now_iso = datetime.utcnow().isoformat()
+
+    # Parallel DNS probing (max 10 workers)
+    with ThreadPoolExecutor(max_workers=min(10, max(1, len(subs)))) as executor:
+        probe_results = list(executor.map(lambda s: probe_subdomain(s, timeout=1.5), subs))
+
     results = []
-    for sub in subs:
+    for res in probe_results:
         results.append({
-            "subdomain": sub,
+            "subdomain": res["subdomain"],
             "first_seen": now_iso,
             "last_scanned": now_iso,
-            "http_status": 200
+            "http_status": 200 if res["is_alive"] else 0,
+            "is_alive": res["is_alive"],
+            "ip_address": res["ip_address"],
+            "cname_target": res["cname_target"],
+            "status": res["status"],
         })
     return results

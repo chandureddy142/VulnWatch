@@ -243,6 +243,10 @@ class SubdomainAsset(Base):
     first_seen = Column(DateTime, default=datetime.utcnow, nullable=False)
     last_scanned = Column(DateTime, default=datetime.utcnow, nullable=False)
     http_status = Column(Integer, default=200, nullable=False)
+    is_alive = Column(Boolean, default=True, nullable=False)
+    ip_address = Column(String(100), nullable=True)
+    cname_target = Column(String(255), nullable=True)
+    status = Column(String(50), default="Live", nullable=False)
 
     def to_dict(self):
         return {
@@ -253,6 +257,10 @@ class SubdomainAsset(Base):
             "first_seen": self.first_seen.isoformat() if self.first_seen else None,
             "last_scanned": self.last_scanned.isoformat() if self.last_scanned else None,
             "http_status": self.http_status,
+            "is_alive": self.is_alive,
+            "ip_address": self.ip_address,
+            "cname_target": self.cname_target,
+            "status": self.status,
         }
 
 
