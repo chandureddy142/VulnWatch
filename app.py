@@ -22,19 +22,34 @@ def create_app(config_name: str = "default") -> Flask:
     cfg_class = config.get(config_name, config["default"])
     cfg = cfg_class()
     app.config.from_object(cfg)
-    app.config.update(
-        SESSION_COOKIE_HTTPONLY=True,
-        SESSION_COOKIE_SAMESITE="Lax",
-        SESSION_COOKIE_SECURE=config_name == "production",
-    )
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_pre_ping": True,
+        "pool_recycle": 280,
+        "pool_timeout": 20,
+        "max_overflow": 10,
+        "pool_size": 5,
+        "connect_args": {
+            "sslmode": "require",
+            "connect_timeout": 10,
+            "keepalives": 1,
+            "keepalives_idle": 30,
+            "keepalives_interval": 10,
+            "keepalives_count": 5,
+        },
+    }
 
     # Initialize Database Engine
-    init_db(app.config["SQLALCHEMY_DATABASE_URI"])
+    init_db(
+        app.config["SQLALCHEMY_DATABASE_URI"],
+        engine_options=app.config.get("SQLALCHEMY_ENGINE_OPTIONS"),
+    )
 
     # Teardown database session on request context end
     @app.teardown_appcontext
-    def cleanup_session(exception=None):
-        shutdown_session(exception)
+    def shutdown_session(exception=None):
+        from database.db import db
+        if db and db.session is not None:
+            db.session.remove()
 
     # Register Blueprints
     app.register_blueprint(dashboard_bp)

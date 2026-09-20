@@ -105,6 +105,15 @@ class Scan(Base):
         "Report", back_populates="scan", cascade="all, delete-orphan"
     )
 
+    @property
+    def subdomains(self):
+        """Return list of discovered subdomains from scan recon metadata."""
+        if self.response_headers and isinstance(self.response_headers, dict):
+            recon = self.response_headers.get("_recon", {})
+            if isinstance(recon, dict) and "ct_subdomains" in recon:
+                return recon.get("ct_subdomains") or []
+        return []
+
     def update_severity_counts(self):
         """Recalculate severity counters from associated findings."""
         counts = {

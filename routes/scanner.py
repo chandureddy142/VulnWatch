@@ -51,6 +51,7 @@ def _resolve_guest_id():
 
 
 @scanner_bp.route("/scanner", methods=["GET"])
+@scanner_bp.route("/scan", methods=["GET"])
 def scanner_form():
     """Render the scan target configuration form.
 

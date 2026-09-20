@@ -141,55 +141,33 @@ def _enumerate_ct_subdomains(host: str, result: ReconResult, timeout: int) -> No
         return
 
     try:
-        clean_domain = host.lower().lstrip("www.")
-        api_url = f"https://crt.sh/?q=%25.{clean_domain}&output=json"
-        resp = requests.get(
-            api_url,
-            timeout=(3, 5),
-            headers={
-                "User-Agent": "VulnWatch-Auditor/1.0 (+https://yourdomain.com/security; contact: abuse@yourdomain.com)"
-            },
-            allow_redirects=False,
-            verify=True,
-        )
-        if resp.status_code == 200:
-            entries = resp.json()
-            seen = set()
-            for entry in entries:
-                name_value = entry.get("name_value", "") or ""
-                for name in name_value.split("\n"):
-                    name = name.strip().lower().lstrip("*.")
-                    if name and clean_domain in name and name not in seen:
-                        seen.add(name)
-                        result.ct_subdomains.append(name)
-                        if len(result.ct_subdomains) >= 30:
-                            break
-                if len(result.ct_subdomains) >= 30:
-                    break
+        from scanner.subdomains import fetch_crt_subdomains
+        subdomains = fetch_crt_subdomains(host, timeout=min(6, timeout))
+        result.ct_subdomains = subdomains
 
-            if len(result.ct_subdomains) > 10:
-                result.findings.append(
-                    RawFinding(
-                        title="Large CT Log Exposure — Attack Surface Enumeration Risk",
-                        category="Attack Surface Management",
-                        severity=SeverityLevel.INFO,
-                        description=(
-                            f"Certificate Transparency logs reveal {len(result.ct_subdomains)} "
-                            f"publicly logged subdomains for '{host}'. This information is freely "
-                            "available to attackers and increases the discoverable attack surface."
-                        ),
-                        remediation=(
-                            "Review all discovered subdomains for decommissioned services, "
-                            "staging environments, or forgotten assets exposed to the internet. "
-                            "Consider implementing a subdomain inventory and lifecycle management process."
-                        ),
-                        affected_url=f"https://crt.sh/?q=%25.{host}",
-                        evidence={
-                            "subdomain_count": len(result.ct_subdomains),
-                            "sample_subdomains": result.ct_subdomains[:10],
-                        },
-                    )
+        if len(result.ct_subdomains) > 10:
+            result.findings.append(
+                RawFinding(
+                    title="Large CT Log Exposure — Attack Surface Enumeration Risk",
+                    category="Attack Surface Management",
+                    severity=SeverityLevel.INFO,
+                    description=(
+                        f"Certificate Transparency logs reveal {len(result.ct_subdomains)} "
+                        f"publicly logged subdomains for '{host}'. This information is freely "
+                        "available to attackers and increases the discoverable attack surface."
+                    ),
+                    remediation=(
+                        "Review all discovered subdomains for decommissioned services, "
+                        "staging environments, or forgotten assets exposed to the internet. "
+                        "Consider implementing a subdomain inventory and lifecycle management process."
+                    ),
+                    affected_url=f"https://crt.sh/?q=%25.{host}",
+                    evidence={
+                        "subdomain_count": len(result.ct_subdomains),
+                        "sample_subdomains": result.ct_subdomains[:10],
+                    },
                 )
+            )
     except Exception:
         # CT enumeration is opportunistic — failures are non-fatal
         pass

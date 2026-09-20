@@ -7,7 +7,16 @@ db_session = None
 engine = None
 
 
-def init_db(database_uri: str):
+class DBWrapper:
+    @property
+    def session(self):
+        return db_session
+
+
+db = DBWrapper()
+
+
+def init_db(database_uri: str, engine_options: dict = None):
     """Initialize the database engine, session factory, and table schema.
 
     For PostgreSQL (Render / production): configures connection pooling with
@@ -23,27 +32,25 @@ def init_db(database_uri: str):
     is_postgres = database_uri.startswith(("postgresql", "postgres"))
 
     if is_postgres:
-        # TCP keepalive options for psycopg2 — tell the kernel to send keepalive
-        # probes after 60 s idle, then every 10 s, giving up after 5 failures.
-        # This keeps the SSL session alive through Render's 90-second proxy timeout.
-        connect_args = {
-            "sslmode": "require",
-            "keepalives": 1,
-            "keepalives_idle": 30,
-            "keepalives_interval": 10,
-            "keepalives_count": 5,
+        pg_options = engine_options or {
+            "pool_pre_ping": True,
+            "pool_recycle": 280,
+            "pool_timeout": 20,
+            "max_overflow": 10,
+            "pool_size": 5,
+            "connect_args": {
+                "sslmode": "require",
+                "connect_timeout": 10,
+                "keepalives": 1,
+                "keepalives_idle": 30,
+                "keepalives_interval": 10,
+                "keepalives_count": 5,
+            },
         }
         engine = create_engine(
             database_uri,
             echo=False,
-            # Health-check every connection before handing it to the app
-            pool_pre_ping=True,
-            # Recycle connections before Render's 300-s proxy timeout
-            pool_recycle=300,
-            pool_timeout=30,
-            pool_size=10,
-            max_overflow=5,
-            connect_args=connect_args,
+            **pg_options,
         )
     else:
         # SQLite — in-memory databases share a single connection (StaticPool)

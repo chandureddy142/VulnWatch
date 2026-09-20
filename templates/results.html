@@ -50,6 +50,7 @@
      PASSIVE RECON INTELLIGENCE PANEL (appears only when recon data exists)
      ═══════════════════════════════════════════════════════════════════════ -->
 {% set recon = (scan.response_headers['_recon'] if scan.response_headers and '_recon' in scan.response_headers else None) %}
+{% set subdomains = subdomains if subdomains is defined and subdomains is not none else (scan.subdomains if scan.subdomains else (recon.ct_subdomains if recon and recon.ct_subdomains else [])) %}
 {% if recon %}
 <div class="panel recon-panel" id="recon-panel">
     <div class="recon-panel-header">
@@ -141,6 +142,31 @@
                 </div>
             </div>
             {% endif %}
+
+            <!-- Discovered Subdomains & Attack Surface -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-xs font-bold tracking-wider text-slate-400 uppercase">Discovered Subdomains</h3>
+                <span class="px-2 py-0.5 text-[10px] font-mono font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">
+                  {{ subdomains|length if subdomains else 0 }} Assets
+                </span>
+              </div>
+
+              {% if subdomains and subdomains|length > 0 %}
+                <div class="max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 pr-1 text-xs">
+                  {% for sub in subdomains %}
+                    <div class="py-1.5 flex items-center justify-between">
+                      <span class="font-mono text-slate-700 dark:text-slate-200 truncate">{{ sub }}</span>
+                      <a href="/scan?target=https://{{ sub }}" class="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+                        Audit &rarr;
+                      </a>
+                    </div>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <p class="text-xs text-slate-400 italic mt-2">No external subdomains detected in CT certificates.</p>
+              {% endif %}
+            </div>
 
             <!-- CT Subdomains -->
             {% if recon.ct_subdomain_count %}
