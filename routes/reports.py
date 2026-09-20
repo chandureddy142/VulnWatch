@@ -1,7 +1,9 @@
+import hashlib
 import os
 import re
 from urllib.parse import urlparse
 from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, send_file, session, url_for
+from sqlalchemy.orm import joinedload
 from database.db import get_session
 from database.models import Finding, Scan, ScanStatus, TriageStatus
 from reports.html_report import generate_html_report
@@ -179,58 +181,34 @@ def update_finding_triage(scan_id: int, finding_id: int):
     return jsonify({"message": "Triage updated.", "finding": finding.to_dict()})
 
 
+@reports_bp.route("/<int:scan_id>/export/html", methods=["GET"])
 @reports_bp.route("/<int:scan_id>/html", methods=["GET"])
 def download_html_report(scan_id: int):
-    """Serve standalone static HTML report file.
-
-    Access control: ownership check only — guests can download their own reports.
-    """
+    """Serve standalone static HTML report file with verification hash."""
     db = get_session()
-    scan = db.query(Scan).filter_by(id=scan_id).first()
+    scan = db.query(Scan).options(joinedload(Scan.findings)).filter_by(id=scan_id).first()
     if not scan:
         return jsonify({"error": "Scan Not Found", "scan_id": scan_id}), 404
 
     if not _check_report_access(scan):
-        return (
-            jsonify(
-                {
-                    "error": "Access Denied",
-                    "message": "You do not have permission to download this report.",
-                }
-            ),
-            403,
-        )
+        return jsonify({"error": "Access Denied", "message": "Permission denied."}), 403
 
-    reports_dir = _get_reports_dir()
-    html_path = os.path.join(reports_dir, f"scan_{scan.id}.html")
+    raw_str = f"{scan.target_url}_{scan.started_at}_{scan.critical_count}"
+    verify_hash = hashlib.sha256(raw_str.encode("utf-8")).hexdigest()
 
-    if not os.path.exists(html_path):
-        generate_html_report(scan, html_path)
-
-    return send_file(html_path, mimetype="text/html")
+    return render_template("export_report.html", scan=scan, hash=verify_hash)
 
 
 @reports_bp.route("/<int:scan_id>/json", methods=["GET"])
 def download_json_report(scan_id: int):
-    """Download scan findings as a JSON artifact.
-
-    Access control: ownership check only — guests can download their own reports.
-    """
+    """Download scan findings as a JSON artifact."""
     db = get_session()
-    scan = db.query(Scan).filter_by(id=scan_id).first()
+    scan = db.query(Scan).options(joinedload(Scan.findings)).filter_by(id=scan_id).first()
     if not scan:
         return jsonify({"error": "Scan Not Found", "scan_id": scan_id}), 404
 
     if not _check_report_access(scan):
-        return (
-            jsonify(
-                {
-                    "error": "Access Denied",
-                    "message": "You do not have permission to download this report.",
-                }
-            ),
-            403,
-        )
+        return jsonify({"error": "Access Denied", "message": "Permission denied."}), 403
 
     reports_dir = _get_reports_dir()
     json_path = os.path.join(reports_dir, f"scan_{scan.id}.json")
@@ -249,39 +227,39 @@ def download_json_report(scan_id: int):
 @reports_bp.route("/<int:scan_id>/export/pdf", methods=["GET"])
 @reports_bp.route("/<int:scan_id>/pdf", methods=["GET"])
 def download_pdf_report(scan_id: int):
-    """Download executive PDF assessment report.
-
-    Access control: ownership check only — guests can download their own reports.
-    """
+    """Download executive PDF report or fallback to print view."""
     db = get_session()
-    scan = db.query(Scan).filter_by(id=scan_id).first()
+    scan = db.query(Scan).options(joinedload(Scan.findings)).filter_by(id=scan_id).first()
     if not scan:
         return jsonify({"error": "Scan Not Found", "scan_id": scan_id}), 404
 
     if not _check_report_access(scan):
-        return (
-            jsonify(
-                {
-                    "error": "Access Denied",
-                    "message": "You do not have permission to download this report.",
-                }
-            ),
-            403,
-        )
+        return jsonify({"error": "Access Denied", "message": "Permission denied."}), 403
 
     reports_dir = _get_reports_dir()
     pdf_path = os.path.join(reports_dir, f"scan_{scan.id}.pdf")
 
     if not os.path.exists(pdf_path):
-        generate_pdf_report(scan, pdf_path)
+        try:
+            generate_pdf_report(scan, pdf_path)
+        except Exception:
+            # Fallback to interactive print-ready HTML view if binary PDF engine is uninstalled
+            raw_str = f"{scan.target_url}_{scan.started_at}_{scan.critical_count}"
+            verify_hash = hashlib.sha256(raw_str.encode("utf-8")).hexdigest()
+            return render_template("export_report.html", scan=scan, hash=verify_hash)
 
-    clean_host = urlparse(scan.target_url).netloc or f"scan_{scan.id}"
-    clean_host = re.sub(r"[^\w\.-]", "_", clean_host)
-    filename = f"VulnWatch_Report_{clean_host}.pdf"
+    if os.path.exists(pdf_path):
+        clean_host = urlparse(scan.target_url).netloc or f"scan_{scan.id}"
+        clean_host = re.sub(r"[^\w\.-]", "_", clean_host)
+        filename = f"VulnWatch_Audit_{scan.id}.pdf"
+        return send_file(
+            pdf_path,
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=filename,
+        )
 
-    return send_file(
-        pdf_path,
-        mimetype="application/pdf",
-        as_attachment=True,
-        download_name=filename,
-    )
+    raw_str = f"{scan.target_url}_{scan.started_at}_{scan.critical_count}"
+    verify_hash = hashlib.sha256(raw_str.encode("utf-8")).hexdigest()
+    return render_template("export_report.html", scan=scan, hash=verify_hash)
+

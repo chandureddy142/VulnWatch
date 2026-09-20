@@ -278,6 +278,114 @@
         <div class="pagination-controls" id="pagination-controls"></div>
     </div>
 </div>
+
+<!-- 4. Discovered Attack Surface Feed -->
+<div class="panel" style="margin-top: 24px;">
+    <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px;">
+        <h2 style="font-size: 16px; font-weight: 700; margin: 0; color: var(--text-1);">Discovered Attack Surface</h2>
+        <span class="badge-status info">{{ subdomain_assets|length if subdomain_assets is defined else 0 }} Discovered Subdomains</span>
+    </div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Subdomain / Host</th>
+                    <th>Status</th>
+                    <th>First Seen</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sub in subdomain_assets if subdomain_assets is defined %}
+                <tr>
+                    <td><code class="mono">{{ sub.subdomain }}</code></td>
+                    <td><span class="badge-status completed">LIVE</span></td>
+                    <td class="text-muted mono">{{ sub.first_seen[:10] if sub.first_seen else 'N/A' }}</td>
+                    <td>
+                        <a href="/scanner?target=https://{{ sub.subdomain }}" class="btn btn-xs btn-primary">Audit Subdomain</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="table-empty">No passive subdomains discovered yet. Passive CT discovery logs will populate automatically.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 5. Recurring Schedules Manager -->
+<div class="panel" style="margin-top: 24px;">
+    <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px;">
+        <h2 style="font-size: 16px; font-weight: 700; margin: 0; color: var(--text-1);">Recurring Audit Schedules</h2>
+        <button type="button" class="btn btn-sm btn-primary" onclick="document.getElementById('schedule-modal').style.display='flex'">+ New Schedule</button>
+    </div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Target URL</th>
+                    <th>Cadence</th>
+                    <th>Next Run</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sched in schedules if schedules is defined %}
+                <tr>
+                    <td><code class="mono">{{ sched.target_url }}</code></td>
+                    <td><span class="home-pill" style="text-transform: uppercase;">{{ sched.cadence }}</span></td>
+                    <td class="text-muted mono">{{ sched.next_run[:19].replace('T', ' ') if sched.next_run else 'N/A' }}</td>
+                    <td><span class="badge-status {{ 'completed' if sched.status == 'active' else 'failed' }}">{{ sched.status|upper }}</span></td>
+                    <td>
+                        <form action="/schedules/{{ sched.id }}/toggle" method="POST" style="display:inline;">
+                            <button type="submit" class="btn btn-xs btn-secondary">{{ 'Pause' if sched.status == 'active' else 'Resume' }}</button>
+                        </form>
+                        <form action="/schedules/{{ sched.id }}/delete" method="POST" style="display:inline;">
+                            <button type="submit" class="btn btn-xs btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="table-empty">No recurring audit schedules configured. <a href="#" onclick="document.getElementById('schedule-modal').style.display='flex'; return false;">Create one now</a>.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Schedule Modal -->
+<div id="schedule-modal" class="interceptor-overlay" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center;">
+    <div class="interceptor-modal" style="background: #0f172a; border: 1px solid #334155; padding: 24px; border-radius: 12px; width: 450px;">
+        <h3 style="color: #fff; margin-top: 0;">Create Recurring Audit Schedule</h3>
+        <form action="/schedules/create" method="POST">
+            <div style="margin-bottom: 16px;">
+                <label style="color: #94a3b8; font-size: 12px; display: block; margin-bottom: 6px;">Target URL / Host</label>
+                <input type="text" name="target_url" placeholder="https://example.com" required style="width: 100%; padding: 8px 12px; background: #1e293b; border: 1px solid #334155; color: #fff; border-radius: 6px;">
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label style="color: #94a3b8; font-size: 12px; display: block; margin-bottom: 6px;">Cadence</label>
+                <select name="cadence" style="width: 100%; padding: 8px 12px; background: #1e293b; border: 1px solid #334155; color: #fff; border-radius: 6px;">
+                    <option value="daily">Daily</option>
+                    <option value="weekly" selected>Weekly</option>
+                    <option value="monthly">Monthly</option>
+                </select>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label style="color: #94a3b8; font-size: 12px; display: block; margin-bottom: 6px;">Webhook URL (Optional degradation alert)</label>
+                <input type="url" name="webhook_url" placeholder="https://hooks.slack.com/..." style="width: 100%; padding: 8px 12px; background: #1e293b; border: 1px solid #334155; color: #fff; border-radius: 6px;">
+            </div>
+            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('schedule-modal').style.display='none'">Cancel</button>
+                <button type="submit" class="btn btn-primary">Create Schedule</button>
+            </div>
+        </form>
+    </div>
+</div>
 </main>
 {% endblock %}
 

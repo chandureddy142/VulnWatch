@@ -263,6 +263,7 @@
                     <div class="snippet-tabs" role="tablist">
                         <button type="button" class="snippet-tab active" data-target="snippet-nginx-{{ finding.id }}">Nginx</button>
                         <button type="button" class="snippet-tab" data-target="snippet-apache-{{ finding.id }}">Apache</button>
+                        <button type="button" class="snippet-tab" data-target="snippet-cloudflare-{{ finding.id }}">Cloudflare</button>
                         <button type="button" class="snippet-tab" data-target="snippet-python-{{ finding.id }}">Python / Flask</button>
                     </div>
                     <div class="snippet-content">
@@ -285,6 +286,16 @@
                                 </button>
                             </div>
                             <pre class="snippet-code mono" id="code-apache-{{ finding.id }}"><code>{{ snippets.apache }}</code></pre>
+                        </div>
+                        <div class="snippet-pane hidden" id="snippet-cloudflare-{{ finding.id }}">
+                            <div class="snippet-header">
+                                <span>Cloudflare Worker</span>
+                                <button type="button" class="copy-btn" data-copy-target="code-cloudflare-{{ finding.id }}">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                    <span>Copy Snippet</span>
+                                </button>
+                            </div>
+                            <pre class="snippet-code mono" id="code-cloudflare-{{ finding.id }}"><code>{{ snippets.cloudflare or 'response.headers.set("X-Content-Type-Options", "nosniff");' }}</code></pre>
                         </div>
                         <div class="snippet-pane hidden" id="snippet-python-{{ finding.id }}">
                             <div class="snippet-header">

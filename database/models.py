@@ -35,6 +35,17 @@ class TriageStatus(enum.Enum):
     false_positive = "false_positive"
 
 
+class CadenceType(enum.Enum):
+    daily = "daily"
+    weekly = "weekly"
+    monthly = "monthly"
+
+
+class ScheduleStatus(enum.Enum):
+    active = "active"
+    paused = "paused"
+
+
 class User(Base):
     """Represents an authenticated user (Google OAuth) or anonymous guest record."""
 
@@ -209,3 +220,60 @@ class Report(Base):
             if self.generated_at
             else None,
         }
+
+
+class SubdomainAsset(Base):
+    """Represents a passively discovered subdomain asset."""
+
+    __tablename__ = "subdomain_assets"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    scan_id = Column(Integer, ForeignKey("scans.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    subdomain = Column(String(255), nullable=False)
+    first_seen = Column(DateTime, default=datetime.utcnow, nullable=False)
+    last_scanned = Column(DateTime, default=datetime.utcnow, nullable=False)
+    http_status = Column(Integer, default=200, nullable=False)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "scan_id": self.scan_id,
+            "user_id": self.user_id,
+            "subdomain": self.subdomain,
+            "first_seen": self.first_seen.isoformat() if self.first_seen else None,
+            "last_scanned": self.last_scanned.isoformat() if self.last_scanned else None,
+            "http_status": self.http_status,
+        }
+
+
+class ScheduledAudit(Base):
+    """Represents a recurring automated security audit schedule."""
+
+    __tablename__ = "scheduled_audits"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    target_url = Column(String(2048), nullable=False)
+    cadence = Column(Enum(CadenceType), default=CadenceType.weekly, nullable=False)
+    last_run = Column(DateTime, nullable=True)
+    next_run = Column(DateTime, default=datetime.utcnow, nullable=False)
+    alert_email = Column(String(320), nullable=True)
+    webhook_url = Column(String(2048), nullable=True)
+    status = Column(Enum(ScheduleStatus), default=ScheduleStatus.active, nullable=False)
+    last_posture_score = Column(Integer, nullable=True)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "target_url": self.target_url,
+            "cadence": self.cadence.value if self.cadence else "weekly",
+            "last_run": self.last_run.isoformat() if self.last_run else None,
+            "next_run": self.next_run.isoformat() if self.next_run else None,
+            "alert_email": self.alert_email,
+            "webhook_url": self.webhook_url,
+            "status": self.status.value if self.status else "active",
+            "last_posture_score": self.last_posture_score,
+        }
+

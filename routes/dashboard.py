@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 from flask import Blueprint, jsonify, render_template, request, redirect, session, url_for
 from sqlalchemy import func
 from database.db import get_session
-from database.models import Finding, Scan, ScanStatus, SeverityLevel
+from database.models import Finding, Scan, ScanStatus, SeverityLevel, ScheduledAudit, SubdomainAsset
 from scanner.engine import cleanup_stale_scans
 from services.auth import require_api_key
 from utils.privacy import mask_domain, check_scan_ownership
@@ -274,6 +274,18 @@ def index():
             d["id"] = None
         recent_scans.append(d)
 
+    # Query recurring schedules
+    sched_query = db.query(ScheduledAudit)
+    if user_id:
+        sched_query = sched_query.filter(ScheduledAudit.user_id == user_id)
+    schedules = [s.to_dict() for s in sched_query.all()]
+
+    # Query subdomain assets
+    sub_query = db.query(SubdomainAsset)
+    if user_id:
+        sub_query = sub_query.filter(SubdomainAsset.user_id == user_id)
+    subdomain_assets = [sa.to_dict() for sa in sub_query.order_by(SubdomainAsset.id.desc()).all()]
+
     if is_json:
         return jsonify(
             {
@@ -284,6 +296,8 @@ def index():
                 "posture_tier": posture_tier,
                 "sparkline_data": sparkline_data,
                 "asset_inventory": asset_inventory,
+                "schedules": schedules,
+                "subdomain_assets": subdomain_assets,
             }
         )
 
@@ -297,4 +311,6 @@ def index():
         posture_tier=posture_tier,
         sparkline_data=sparkline_data,
         asset_inventory=asset_inventory,
+        schedules=schedules,
+        subdomain_assets=subdomain_assets,
     )

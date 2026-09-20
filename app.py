@@ -8,6 +8,8 @@ from routes.auth import auth_bp, profile_bp
 from routes.dashboard import dashboard_bp
 from routes.reports import reports_bp
 from routes.scanner import scanner_bp
+from routes.schedules import schedules_bp
+from routes.search import search_bp
 from routes.settings import settings_bp
 from scanner.target import TargetValidationError
 
@@ -42,6 +44,8 @@ def create_app(config_name: str = "default") -> Flask:
     app.register_blueprint(settings_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(profile_bp)
+    app.register_blueprint(schedules_bp)
+    app.register_blueprint(search_bp)
 
     @app.after_request
     def add_security_headers(response):
