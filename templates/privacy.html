@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Privacy Policy | VulnWatch{% endblock %}
+
+{% block content %}
+<div class="container py-8 max-w-4xl mx-auto px-4">
+    <!-- Header Card -->
+    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 sm:p-10 mb-8 backdrop-blur-md">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">Privacy Policy</h1>
+                <p class="text-slate-400 text-sm mt-1">Effective Date: September 20, 2026 &bull; Version 1.0</p>
+            </div>
+        </div>
+        <p class="text-slate-300 text-sm leading-relaxed border-t border-slate-800/80 pt-4 mt-4">
+            VulnWatch ("we", "our", or "us") is committed to protecting user privacy and ensuring transparent handling of audit data. This Privacy Policy details how we collect, process, store, and safeguard information when you use the VulnWatch Passive Vulnerability &amp; Attack Surface Intelligence platform.
+        </p>
+    </div>
+
+    <!-- Content Sections -->
+    <div class="space-y-6 text-slate-300 text-sm leading-relaxed">
+        
+        <section class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6">
+            <h2 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                1. Information We Collect
+            </h2>
+            <div class="space-y-3 pl-4 border-l-2 border-slate-800">
+                <p>
+                    <strong class="text-slate-200">A. Target Audit Inputs:</strong> When you initiate a security assessment, we record the target URL or hostname specified (e.g. hostnames, IP addresses, subdomains) to execute passive security checks.
+                </p>
+                <p>
+                    <strong class="text-slate-200">B. Authentication &amp; Profile Data:</strong> If you authenticate using Google Sign-In, we store your email address, full name, Google User ID, and profile image URL for user identification and scan history management.
+                </p>
+                <p>
+                    <strong class="text-slate-200">C. Guest Device Identifiers:</strong> For unauthenticated guest sessions, we issue a random, anonymous guest device identifier cookie (<code class="bg-slate-800 px-1.5 py-0.5 rounded text-indigo-300 font-mono text-xs">guest_device_id</code>) strictly to enforce free quota limits.
+                </p>
+                <p>
+                    <strong class="text-slate-200">D. Technical Telemetry:</strong> Standard web server logs (IP address, browser user-agent, request timestamp) are collected for performance, abuse prevention, and rate-limiting purposes.
+                </p>
+            </div>
+        </section>
+
+        <section class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6">
+            <h2 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                2. Data Usage &amp; Processing Principles
+            </h2>
+            <p class="mb-3">We process collected information strictly for the following purposes:</p>
+            <ul class="list-disc list-inside space-y-2 text-slate-300 pl-2">
+                <li>Executing passive, non-intrusive security posture assessments against submitted target hosts.</li>
+                <li>Displaying historical audit reports, risk scores, and security findings in your personal dashboard.</li>
+                <li>Enforcing rate limits, guest quota boundaries, and anti-abuse safeguards.</li>
+                <li>Maintaining accurate user authentication and session security.</li>
+            </ul>
+            <p class="mt-3 text-slate-400 text-xs">
+                We do <strong>NOT</strong> perform active intrusive exploits, port sweeps, or brute-force attacks. All audit data is generated through public standards-compliant passive inspection (DNS queries, TLS handshakes, HTTP response header inspection, Certificate Transparency logs).
+            </p>
+        </section>
+
+        <section class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6">
+            <h2 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                3. Data Storage &amp; Retention
+            </h2>
+            <p>
+                Scan results and audit history are securely stored in our encrypted production database. Audit reports associated with guest sessions may be subject to automated cleanup after 30 days. Authenticated users retain full control over their scan history and can delete specific audit logs via their account dashboard.
+            </p>
+        </section>
+
+        <section class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6">
+            <h2 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                4. Cookies &amp; Local Storage
+            </h2>
+            <p class="mb-3">
+                VulnWatch uses strictly necessary cookies and local storage tokens to operate essential functions:
+            </p>
+            <ul class="list-disc list-inside space-y-2 text-slate-300 pl-2">
+                <li><code class="bg-slate-800 px-1.5 py-0.5 rounded text-indigo-300 font-mono text-xs">session</code>: Encrypted Flask session cookie for authentication and state.</li>
+                <li><code class="bg-slate-800 px-1.5 py-0.5 rounded text-indigo-300 font-mono text-xs">guest_device_id</code>: Unique random UUID cookie for tracking guest quota.</li>
+                <li><code class="bg-slate-800 px-1.5 py-0.5 rounded text-indigo-300 font-mono text-xs">vw_theme</code> / <code class="bg-slate-800 px-1.5 py-0.5 rounded text-indigo-300 font-mono text-xs">wg-theme</code>: Browser local storage preference for light/dark display theme.</li>
+            </ul>
+        </section>
+
+        <section class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6">
+            <h2 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                5. Third-Party Services
+            </h2>
+            <p>
+                We integrate with Google OAuth 2.0 strictly for user authentication. We do not sell, rent, or trade your personal information or audit findings to third-party advertisers or data brokers.
+            </p>
+        </section>
+
+        <section class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6">
+            <h2 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                6. Your Rights &amp; Data Deletion
+            </h2>
+            <p>
+                You have the right to access, export, or request permanent deletion of your audit data and account credentials at any time. You can clear your account data directly from the Settings page or by contacting our team.
+            </p>
+        </section>
+
+        <section class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6">
+            <h2 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                7. Contact Us
+            </h2>
+            <p>
+                If you have questions regarding this Privacy Policy or security operations, please reach out via our official repository or contact security support at <a href="mailto:security@vulnwatch.io" class="text-indigo-400 underline hover:text-indigo-300">security@vulnwatch.io</a>.
+            </p>
+        </section>
+
+    </div>
+</div>
+{% endblock %}

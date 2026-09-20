@@ -43,6 +43,7 @@
 
             <form id="scan-form" action="/scan" method="POST" novalidate>
                 <input type="hidden" id="scan_mode" name="scan_mode" value="single">
+                <input type="text" name="hp_website" tabindex="-1" autocomplete="off" style="display:none !important; position:absolute; left:-9999px;" aria-hidden="true">
                 <div class="panel-body">
 
                     <!-- Single Target Input -->
@@ -59,6 +60,7 @@
                                 placeholder="example.com or 127.0.0.1:8080"
                                 autocomplete="off"
                                 spellcheck="false"
+                                maxlength="2048"
                                 required>
                         </div>
                         <div class="form-hint">Must be an authorized local or approved network target URL. A protocol is added automatically if you omit one.</div>

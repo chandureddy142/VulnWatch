@@ -6,10 +6,12 @@ from database.db import init_db, shutdown_session
 from routes.api import api_bp
 from routes.auth import auth_bp, profile_bp
 from routes.dashboard import dashboard_bp
+from routes.legal import legal_bp
 from routes.reports import reports_bp
 from routes.scanner import scanner_bp
 from routes.schedules import schedules_bp
 from routes.search import search_bp
+from routes.seo import seo_bp
 from routes.settings import settings_bp
 from scanner.target import TargetValidationError
 
@@ -61,6 +63,8 @@ def create_app(config_name: str = "default") -> Flask:
     app.register_blueprint(profile_bp)
     app.register_blueprint(schedules_bp)
     app.register_blueprint(search_bp)
+    app.register_blueprint(legal_bp)
+    app.register_blueprint(seo_bp)
 
     @app.after_request
     def add_security_headers(response):
@@ -83,7 +87,10 @@ def create_app(config_name: str = "default") -> Flask:
 
     @app.errorhandler(404)
     def handle_not_found(err):
-        return jsonify({"error": "Resource Not Found"}), 404
+        if request.path.startswith("/api/") or request.is_json or (request.accept_mimetypes.best == "application/json" and request.accept_mimetypes.best_match(["application/json", "text/html"]) == "application/json"):
+            return jsonify({"error": "Resource Not Found"}), 404
+        from flask import render_template
+        return render_template("404.html"), 404
 
     @app.errorhandler(500)
     def handle_internal_error(err):

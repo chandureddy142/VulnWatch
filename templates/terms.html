@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Terms &amp; Conditions | VulnWatch{% endblock %}
+
+{% block content %}
+<div class="container py-8 max-w-4xl mx-auto px-4">
+    <!-- Header Card -->
+    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 sm:p-10 mb-8 backdrop-blur-md">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">Terms &amp; Conditions</h1>
+                <p class="text-slate-400 text-sm mt-1">Effective Date: September 20, 2026 &bull; Version 1.0</p>
+            </div>
+        </div>
+        <p class="text-slate-300 text-sm leading-relaxed border-t border-slate-800/80 pt-4 mt-4">
+            These Terms &amp; Conditions ("Terms") govern your use of VulnWatch. By accessing or using the platform, you agree to be bound by these Terms. If you do not agree, do not use the service.
+        </p>
+    </div>
+
+    <!-- Content Sections -->
+    <div class="space-y-6 text-slate-300 text-sm leading-relaxed">
+        
+        <section class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6">
+            <h2 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                1. Use of Service &amp; Scope
+            </h2>
+            <p>
+                VulnWatch provides passive vulnerability analysis and attack surface intelligence. Audits conducted through VulnWatch gather information solely through non-intrusive, publicly visible network protocols, HTTP header analysis, TLS metadata inspection, and Certificate Transparency log inspection.
+            </p>
+        </section>
+
+        <section class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6">
+            <h2 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                2. User Responsibilities &amp; Authorized Use
+            </h2>
+            <div class="space-y-3 pl-4 border-l-2 border-indigo-500/40">
+                <p>
+                    <strong class="text-white">Authorization Requirement:</strong> You represent and warrant that you own, operate, or have explicit authorization to assess the target systems, hostnames, and IP addresses submitted to VulnWatch.
+                </p>
+                <p>
+                    <strong class="text-white">Prohibited Activities:</strong> You shall NOT use VulnWatch to:
+                </p>
+                <ul class="list-disc list-inside space-y-1 text-slate-300 pl-4">
+                    <li>Audit targets for malicious, unauthorized, or unlawful reconnaissance.</li>
+                    <li>Attempt denial-of-service, automated scraping, or resource exhaustion attacks against third-party hosts.</li>
+                    <li>Bypass rate limits, guest quota restrictions, or authentication controls.</li>
+                    <li>Resell or distribute audit intelligence without proper authorization.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6">
+            <h2 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                3. Account Responsibilities &amp; Access Tiers
+            </h2>
+            <p>
+                VulnWatch offers Guest access (limited free audits) and Google Authenticated access (full feature set). You are responsible for maintaining the confidentiality of your session credentials and for all activities conducted under your account.
+            </p>
+        </section>
+
+        <section class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6">
+            <h2 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                4. Intellectual Property
+            </h2>
+            <p>
+                The VulnWatch software, brand, design assets, vulnerability heuristics, and documentation are protected by copyright, trademark, and intellectual property laws. All rights not expressly granted herein are reserved.
+            </p>
+        </section>
+
+        <section class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6">
+            <h2 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                5. Third-Party Services
+            </h2>
+            <p>
+                VulnWatch may reference third-party security databases (e.g. NVD, CRT.sh log providers, DNS resolvers). We are not responsible for the availability, accuracy, or content of third-party external services.
+            </p>
+        </section>
+
+        <section class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6">
+            <h2 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                6. Service Availability &amp; Modifications
+            </h2>
+            <p>
+                We strive for continuous availability, but do not guarantee uninterrupted operation. We reserve the right to modify, suspend, or discontinue any feature, endpoint, or quota limit at any time.
+            </p>
+        </section>
+
+        <section class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6">
+            <h2 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                7. Limitations of Liability &amp; Disclaimer of Warranties
+            </h2>
+            <p class="text-slate-300">
+                VULNWATCH IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED. PASSIVE AUDIT RESULTS ARE FOR INFORMATIONAL PURPOSES AND DO NOT CONSTITUTE A GUARANTEE OF COMPLETE SYSTEM SECURITY. IN NO EVENT SHALL VULNWATCH BE LIABLE FOR ANY INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING OUT OF YOUR USE OF THE SERVICE.
+            </p>
+        </section>
+
+        <section class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6">
+            <h2 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                8. Termination
+            </h2>
+            <p>
+                We reserve the right to suspend or terminate access to VulnWatch immediately, without prior notice, if a user violates these Terms or engages in unauthorized network scanning.
+            </p>
+        </section>
+
+        <section class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6">
+            <h2 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                9. Changes to Terms
+            </h2>
+            <p>
+                We may update these Terms periodically. Continued use of VulnWatch following posted updates constitutes acceptance of the revised Terms.
+            </p>
+        </section>
+
+        <section class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6">
+            <h2 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                10. Contact Information
+            </h2>
+            <p>
+                For inquiries regarding these Terms, please contact us at <a href="mailto:terms@vulnwatch.io" class="text-indigo-400 underline hover:text-indigo-300">terms@vulnwatch.io</a>.
+            </p>
+        </section>
+
+    </div>
+</div>
+{% endblock %}

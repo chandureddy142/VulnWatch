@@ -122,6 +122,22 @@ def get_active_queue():
 
 
 
+import time
+from collections import defaultdict
+
+_IP_RATE_LIMITS = defaultdict(list)
+
+
+def _check_rate_limit(ip_address: str, max_requests: int = 15, window_seconds: int = 60) -> bool:
+    now = time.time()
+    timestamps = [t for t in _IP_RATE_LIMITS[ip_address] if now - t < window_seconds]
+    _IP_RATE_LIMITS[ip_address] = timestamps
+    if len(timestamps) >= max_requests:
+        return False
+    _IP_RATE_LIMITS[ip_address].append(now)
+    return True
+
+
 @scanner_bp.route("/scan", methods=["POST"])
 @require_api_key_or_browser
 def trigger_scan():
@@ -134,12 +150,26 @@ def trigger_scan():
         module_advanced_dns / module_tls_deep / module_headers_advanced /
         module_frontend / module_metadata (bool): Advanced enterprise module toggles.
     """
+    client_ip = request.remote_addr or "127.0.0.1"
+    if not _check_rate_limit(client_ip):
+        return (
+            jsonify({"error": "Rate limit exceeded. Please wait a minute before initiating another audit."}),
+            429,
+        )
+
     if request.is_json:
         data = request.get_json() or {}
     else:
         data = request.form.to_dict()
 
+    # Honeypot validation for spam bot prevention
+    if data.get("hp_website") or data.get("hp_field"):
+        return jsonify({"error": "Automated spam request rejected."}), 400
+
     target_url = data.get("target_url", "").strip()
+    if not target_url or len(target_url) > 2048:
+        return jsonify({"error": "Target URL is invalid or exceeds maximum length."}), 400
+
     authorized_flag = data.get("authorized") or data.get("confirm_authorization")
 
     # Authorization Check Verification

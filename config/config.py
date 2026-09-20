@@ -37,14 +37,18 @@ class Config:
         "GOOGLE_REDIRECT_URI", "http://127.0.0.1:5000/auth/callback"
     )
 
-    # Guest scan quota (scans allowed before requiring sign-in)
-    GUEST_SCAN_LIMIT = int(os.environ.get("GUEST_SCAN_LIMIT", 3))
+    # Cookie & Session Security Settings
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
+    REMEMBER_COOKIE_HTTPONLY = True
+    ANALYTICS_ID = os.environ.get("ANALYTICS_ID", "")
 
 
 class DevelopmentConfig(Config):
     DEBUG = True
     ALLOW_LOCALHOST = True
     SECRET_KEY = os.environ.get("SECRET_KEY", "development-only-change-me")
+    SESSION_COOKIE_SECURE = False
 
 
 class TestingConfig(Config):
@@ -56,11 +60,15 @@ class TestingConfig(Config):
     DEFAULT_CONCURRENCY = 2
     SECRET_KEY = "testing-secret-not-for-production"
     API_KEY = "testing-api-key"
+    SESSION_COOKIE_SECURE = False
 
 
 class ProductionConfig(Config):
     DEBUG = False
     ALLOW_LOCALHOST = False
+    PREFERRED_URL_SCHEME = "https"
+    SESSION_COOKIE_SECURE = True
+    REMEMBER_COOKIE_SECURE = True
 
     def __init__(self):
         if not self.SECRET_KEY:
