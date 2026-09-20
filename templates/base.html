@@ -37,7 +37,9 @@
                 </a>
 
                 <nav class="nav-links" aria-label="Primary">
-                    <a href="/" class="nav-link {% if request.path == '/' %}is-active{% endif %}">Dashboard</a>
+                    {% if session.get('user') or session.get('user_id') or is_guest %}
+                    <a href="/dashboard" class="nav-link {% if request.path == '/dashboard' %}is-active{% endif %}">Dashboard</a>
+                    {% endif %}
                     <a href="/scanner" id="nav-new-audit" class="nav-link {% if request.path == '/scanner' %}is-active{% endif %}">New Audit</a>
                     <a href="{{ url_for('api.api_docs') }}" class="nav-link {% if request.path == '/api/docs' %}is-active{% endif %}">API Docs</a>
                 </nav>

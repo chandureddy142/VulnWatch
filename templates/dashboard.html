@@ -28,88 +28,11 @@
         <h1>Executive Audit Dashboard</h1>
         <p class="sub">Overview of security posture assessments, vulnerability metrics, and scan logs across authorized targets.</p>
     </div>
-    {% if is_anonymous %}
-    <a href="/auth/login?reason=audit_required" class="btn btn-primary">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        New Target Audit
-    </a>
-    {% else %}
     <a href="/scanner" class="btn btn-primary">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         New Target Audit
     </a>
-    {% endif %}
 </div>
-
-{% if is_anonymous %}
-<!-- Public Hero / About Section for Anonymous Public Visitors -->
-<div class="public-hero-panel panel" style="margin-bottom: 24px; padding: 28px 32px; background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.98)); color: #fff; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);">
-    <div style="max-width: 800px;">
-        <span class="eyebrow" style="color: #38bdf8; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; font-size: 11px;">// PUBLIC AUDIT INTELLIGENCE</span>
-        <h2 style="font-size: 24px; font-weight: 800; margin: 8px 0 12px; color: #f8fafc;">VulnWatch Passive Security Posture &amp; Attack Surface Auditor</h2>
-        <p style="font-size: 15px; color: #94a3b8; line-height: 1.6; margin-bottom: 20px;">
-            VulnWatch provides non-intrusive, automated VAPT and perimeter intelligence gathering. Inspect security headers, cookie parameters, TLS grade, and DNS email posture (SPF/DMARC/DKIM) without invasive network probes.
-        </p>
-        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-            <a href="/auth/login?reason=audit_required" class="btn btn-primary">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                Start Free Security Audit
-            </a>
-            <a href="/api/docs" class="btn" style="background: rgba(255,255,255,0.08); color: #e2e8f0; border: 1px solid rgba(255,255,255,0.15);">
-                API Documentation &rarr;
-            </a>
-        </div>
-    </div>
-</div>
-
-<!-- Platform Volume Stats Grid for Public Visitors -->
-<div class="stats-grid" style="margin-bottom: 28px;">
-    <div class="stat-card stat-card--posture">
-        <div class="stat-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        </div>
-        <div class="stat-label">Global Avg Posture</div>
-        <div class="posture-card">
-            <div class="posture-gauge-wrap">
-                <svg class="posture-gauge" viewBox="0 0 36 36" aria-hidden="true">
-                    <circle class="posture-gauge-bg" cx="18" cy="18" r="15.5"/>
-                    <circle class="posture-gauge-arc" cx="18" cy="18" r="15.5"
-                        stroke="{{ '#16a34a' if global_avg_posture >= 80 else ('#d97706' if global_avg_posture >= 60 else '#dc2626') }}"
-                        stroke-dasharray="97.4"
-                        stroke-dashoffset="{{ (97.4 * (1 - global_avg_posture / 100)) | round(2) }}"
-                    />
-                </svg>
-                <div class="posture-gauge-label">
-                    <span class="posture-gauge-score">{{ global_avg_posture }}</span>
-                    <span class="posture-gauge-slash">/100</span>
-                </div>
-            </div>
-            <div class="posture-info">
-                <span class="posture-tier posture-tier--{{ 'optimal' if global_avg_posture >= 80 else ('moderate' if global_avg_posture >= 60 else 'critical') }}">
-                    {{ global_posture_tier }}
-                </span>
-                <p class="posture-desc">Platform Benchmark</p>
-            </div>
-        </div>
-    </div>
-
-    <div class="stat-card stat-card--total">
-        <div class="stat-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        </div>
-        <div class="stat-label">Global Audits Conducted</div>
-        <div class="stat-value">{{ global_total_audits }}</div>
-    </div>
-
-    <div class="stat-card" data-sev="high">
-        <div class="stat-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>
-        </div>
-        <div class="stat-label">Total Security Findings</div>
-        <div class="stat-value">{{ global_total_findings }}</div>
-    </div>
-</div>
-{% else %}
 
 <!-- Severity Counter Cards + Posture Score -->
 <div class="stats-grid">
@@ -186,7 +109,6 @@
         <div class="stat-value">{{ totals.info }}</div>
     </div>
 </div>
-{% endif %}
 
 <!-- 30-day Scan Volume Sparkline -->
 <div class="sparkline-section">
@@ -324,11 +246,7 @@
                     data-medium="{{ scan.severity_summary.medium }}">
                     <td><code class="mono">{% if scan.id %}#{{ scan.id }}{% else %}&bull;&bull;&bull;{% endif %}</code></td>
                     <td class="target-cell mono">
-                        {% if is_anonymous %}
-                        <a href="/auth/login?reason=audit_required" title="{{ scan.target_url }}">{{ scan.target_url }}</a>
-                        {% else %}
                         <a href="/reports/{{ scan.id }}" title="{{ scan.target_url }}">{{ scan.target_url }}</a>
-                        {% endif %}
                         {% if scan.recurrence > 1 %}
                         <span class="recurrence-pill" title="This target has been audited {{ scan.recurrence }} times">Audited {{ scan.recurrence }}×</span>
                         {% endif %}
@@ -341,24 +259,14 @@
                     </td>
                     <td class="text-muted mono">{{ scan.started_at[:19].replace('T', ' ') if scan.started_at else 'N/A' }}</td>
                     <td class="actions-cell">
-                        {% if is_anonymous %}
-                        <a href="/auth/login?reason=audit_required" class="pill-link">HTML</a>
-                        <a href="/auth/login?reason=audit_required" class="pill-link">PDF</a>
-                        <a href="/auth/login?reason=audit_required" class="pill-link">JSON</a>
-                        {% else %}
                         <a href="/reports/{{ scan.id }}/html" class="pill-link">HTML</a>
                         <a href="/reports/{{ scan.id }}/pdf" class="pill-link">PDF</a>
                         <a href="/reports/{{ scan.id }}/json" class="pill-link">JSON</a>
-                        {% endif %}
                     </td>
                 </tr>
                 {% else %}
                 <tr id="empty-row">
-                    {% if is_anonymous %}
-                    <td colspan="6" class="table-empty">No public audits recorded yet. <a href="/auth/login?reason=audit_required">Sign in to launch an audit</a>.</td>
-                    {% else %}
                     <td colspan="6" class="table-empty">No target security audits conducted yet. <a href="/scanner">Launch a scan</a>.</td>
-                    {% endif %}
                 </tr>
                 {% endfor %}
             </tbody>
