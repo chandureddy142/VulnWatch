@@ -175,36 +175,7 @@
 </div>
 {% endif %}
 
-<!-- Platform Architecture -->
-<section class="architecture-section">
-    <div class="section-heading">
-        <h2>About VulnWatch Platform Architecture</h2>
-        <p class="sub">How every assessment is scoped, executed, and mapped back to established security guidance.</p>
-    </div>
-    <div class="architecture-grid">
-        <div class="arch-card">
-            <div class="arch-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
-            </div>
-            <h3>Automated VAPT Pipeline</h3>
-            <p>Every scan runs the same repeatable sequence &mdash; target validation, passive reconnaissance, header and cookie analysis, then structured report generation. No manual steps, no skipped checks between runs.</p>
-        </div>
-        <div class="arch-card">
-            <div class="arch-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9.5 12.5 11 14l3.5-3.5"/></svg>
-            </div>
-            <h3>Boundary &amp; SSRF Defense</h3>
-            <p>Target URLs are resolved and validated before a single request goes out. Loopback addresses, private IP ranges, and internal hostnames are blocked by default, so a scan can't be pointed at infrastructure it was never authorized to reach.</p>
-        </div>
-        <div class="arch-card">
-            <div class="arch-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 8 3.5v6c0 5-3.4 8.7-8 10.5-4.6-1.8-8-5.5-8-10.5v-6L12 2z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
-            </div>
-            <h3>OWASP &amp; Defense-in-Depth</h3>
-            <p>Checks are mapped to OWASP secure-headers and session-management guidance &mdash; CSP, HSTS, cookie flags, and HTTP verb enumeration. Layered controls, so a single misconfiguration doesn't become an incident.</p>
-        </div>
-    </div>
-</section>
+
 
 <!-- Recent Assessment Log / Public Masked Feed -->
 <div class="panel" id="scan-table-panel">

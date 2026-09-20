@@ -343,7 +343,7 @@
     </div>
 
     <!-- 4. PREVIOUS SCAN HISTORY TABLE (Adaptive Theme Rows & Header) -->
-    <div class="home-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 transition-colors duration-200 rounded-xl shadow-sm" style="padding: 0; overflow-x: auto; margin-top: 24px;">
+    <div id="scan-history" class="home-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 transition-colors duration-200 rounded-xl shadow-sm" style="padding: 0; overflow-x: auto; margin-top: 24px; scroll-margin-top: 80px;">
         <div class="home-table-header" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
             <h2 class="home-title text-slate-900 dark:text-white" style="font-size: 16px; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="text-indigo-600 dark:text-sky-400"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -362,7 +362,8 @@
                 </tr>
             </thead>
             <tbody>
-                {% for scan in recent_public_scans %}
+                {% set feed_items = scans_pagination.items if scans_pagination is defined and scans_pagination else recent_public_scans %}
+                {% for scan in feed_items %}
                 <tr class="home-table-row">
                     <td style="padding: 14px 20px;">
                         <span class="home-target-text font-mono text-slate-800 dark:text-slate-200" style="font-family: 'JetBrains Mono', monospace; font-size: 13.5px; font-weight: 600;">
@@ -402,6 +403,59 @@
                 {% endfor %}
             </tbody>
         </table>
+
+        <!-- Server-Side Pagination Controls -->
+        {% if scans_pagination is defined and scans_pagination and scans_pagination.total > 0 %}
+        <div style="padding: 16px 20px; border-top: 1px solid rgba(226, 232, 240, 0.1); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <span class="home-subtext text-slate-500 dark:text-slate-400" style="font-size: 13px; font-weight: 500;">
+                Showing {{ (scans_pagination.page - 1) * scans_pagination.per_page + 1 }}–{{ (scans_pagination.page - 1) * scans_pagination.per_page + scans_pagination.items|length }} of {{ scans_pagination.total }}
+            </span>
+
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <!-- Prev Button -->
+                {% if scans_pagination.has_prev %}
+                <a href="{{ url_for('dashboard.home', page=scans_pagination.prev_num) }}#scan-history"
+                   style="display: inline-flex; align-items: center; justify-content: center; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none; background: #1e293b; color: #cbd5e1; border: 1px solid #334155;">
+                    Prev
+                </a>
+                {% else %}
+                <span style="display: inline-flex; align-items: center; justify-content: center; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; opacity: 0.5; background: #1e293b; color: #64748b; border: 1px solid #334155; cursor: not-allowed;">
+                    Prev
+                </span>
+                {% endif %}
+
+                <!-- Numbered Page Pills -->
+                {% for p in scans_pagination.iter_pages() %}
+                    {% if p %}
+                        {% if p == scans_pagination.page %}
+                        <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 32px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-weight: 700; background: #4f46e5; color: #ffffff;">
+                            {{ p }}
+                        </span>
+                        {% else %}
+                        <a href="{{ url_for('dashboard.home', page=p) }}#scan-history"
+                           style="display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 32px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none; background: #1e293b; color: #cbd5e1; border: 1px solid #334155;">
+                            {{ p }}
+                        </a>
+                        {% endif %}
+                    {% else %}
+                    <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 32px; color: #64748b; font-size: 13px;">...</span>
+                    {% endif %}
+                {% endfor %}
+
+                <!-- Next Button -->
+                {% if scans_pagination.has_next %}
+                <a href="{{ url_for('dashboard.home', page=scans_pagination.next_num) }}#scan-history"
+                   style="display: inline-flex; align-items: center; justify-content: center; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none; background: #1e293b; color: #cbd5e1; border: 1px solid #334155;">
+                    Next
+                </a>
+                {% else %}
+                <span style="display: inline-flex; align-items: center; justify-content: center; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; opacity: 0.5; background: #1e293b; color: #64748b; border: 1px solid #334155; cursor: not-allowed;">
+                    Next
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <!-- 5. ABOUT PLATFORM ARCHITECTURE (Adaptive Theme Cards Grid) -->

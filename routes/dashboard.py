@@ -33,6 +33,34 @@ def _score_tier(score: int) -> str:
     return "Needs Attention"
 
 
+class PaginationHelper:
+    """Flask-SQLAlchemy compatible pagination helper for raw SQLAlchemy queries."""
+
+    def __init__(self, page: int, per_page: int, total: int, items: list):
+        self.page = page
+        self.per_page = per_page
+        self.total = total
+        self.items = items
+        self.pages = max(1, (total + per_page - 1) // per_page)
+        self.has_prev = self.page > 1
+        self.has_next = self.page < self.pages
+        self.prev_num = self.page - 1 if self.has_prev else None
+        self.next_num = self.page + 1 if self.has_next else None
+
+    def iter_pages(self, left_edge=1, left_current=2, right_current=2, right_edge=1):
+        last = 0
+        for num in range(1, self.pages + 1):
+            if (
+                num <= left_edge
+                or (num >= self.page - left_current and num <= self.page + right_current)
+                or num > self.pages - right_edge
+            ):
+                if last + 1 != num:
+                    yield None
+                yield num
+                last = num
+
+
 @dashboard_bp.route("/", methods=["GET"])
 def home():
     """Render public landing page with global platform metrics and masked recent public scans."""
@@ -89,14 +117,26 @@ def home():
 
     global_posture_tier = _score_tier(global_avg_posture)
 
-    # Public recent scans feed — strictly masked
-    public_scans_models = (
+    # Public recent scans feed — server-side pagination with 10 records per page
+    page = request.args.get("page", 1, type=int)
+    if not isinstance(page, int) or page < 1:
+        page = 1
+    per_page = 10
+
+    completed_query = (
         db.query(Scan)
         .filter(Scan.status == ScanStatus.COMPLETED)
         .order_by(Scan.started_at.desc())
-        .limit(20)
-        .all()
     )
+
+    total_scans = completed_query.count()
+    total_pages = max(1, (total_scans + per_page - 1) // per_page)
+    if page > total_pages:
+        page = total_pages
+
+    offset = (page - 1) * per_page
+    public_scans_models = completed_query.offset(offset).limit(per_page).all()
+
     recent_public_scans = []
     for s in public_scans_models:
         d = s.to_dict(user_id=None, guest_session_id=None)
@@ -106,6 +146,13 @@ def home():
             s.critical_count, s.high_count, s.medium_count, s.low_count
         )
         recent_public_scans.append(d)
+
+    scans_pagination = PaginationHelper(
+        page=page,
+        per_page=per_page,
+        total=total_scans,
+        items=recent_public_scans,
+    )
 
     # 30-day activity graph
     thirty_days_ago = datetime.utcnow() - timedelta(days=30)
@@ -132,6 +179,7 @@ def home():
         global_posture_tier=global_posture_tier,
         discovered_assets=global_total_findings,
         recent_public_scans=recent_public_scans,
+        scans_pagination=scans_pagination,
         sparkline_data=sparkline_data,
     )
 
