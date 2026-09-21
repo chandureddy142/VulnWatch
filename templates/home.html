@@ -506,12 +506,13 @@
         </div>
     </div>
 
-        <!-- Floating Quick Audit Action Button (Home Page Exclusive) -->
+        <!-- Floating Quick Audit Action Button (Home Page Exclusive with Auth Guard) -->
+        {% set is_logged_in = (session.get('user_id') and not session.get('is_guest')) or (session.get('is_guest') and (guest_scans_left is defined and guest_scans_left > 0)) or (session.get('user') is defined and session.get('user')) %}
         <div class="fixed bottom-8 right-8 z-40" style="position: fixed; bottom: 32px; right: 32px; z-index: 40;">
-          <a href="/scan" 
+          <a href="{{ '/scan' if is_logged_in else url_for('auth.login', next='/scan') }}" 
              id="floatingNewAuditBtn"
-             title="Start New Security Audit" 
-             aria-label="Start New Security Audit"
+             title="{{ 'Start Security Audit' if is_logged_in else 'Sign In to Start Audit' }}" 
+             aria-label="{{ 'Start Security Audit' if is_logged_in else 'Sign In to Start Audit' }}"
              class="group relative flex items-center justify-center w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-600/30 border border-indigo-400/30 transition-all duration-200 hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-indigo-500/30"
              style="position: relative; display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 9999px; background-color: #4f46e5; color: #ffffff; box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.3); border: 1px solid rgba(129, 140, 248, 0.3); text-decoration: none; transition: transform 0.2s, background-color 0.2s;"
              onmouseover="this.style.backgroundColor='#4338ca';this.style.transform='scale(1.05)';"
@@ -529,7 +530,7 @@
             <!-- Hover Tooltip -->
             <span class="fab-tooltip absolute right-16 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-semibold text-slate-200 whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 shadow-lg"
                   style="position: absolute; right: 64px; top: 50%; transform: translateY(-50%); padding: 6px 12px; border-radius: 8px; background-color: #0f172a; border: 1px solid #334155; font-size: 12px; font-weight: 600; color: #e2e8f0; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 0.15s; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5);">
-              New Audit
+              {{ 'New Audit' if is_logged_in else 'Sign In to Audit' }}
             </span>
           </a>
         </div>
