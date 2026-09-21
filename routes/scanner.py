@@ -62,6 +62,11 @@ def scan_page():
     db = get_session()
     cleanup_stale_scans(db, max_age_seconds=120)
     user_id = session.get("user_id")
+    has_guest_auth = bool(session.get("is_guest") or request.cookies.get("guest_device_id"))
+
+    # Require authentication or explicit guest choice before accessing scan page
+    if not user_id and not has_guest_auth:
+        return redirect(url_for("auth.login", next=request.path))
 
     # Determine user role
     is_google_user = bool(user_id and not session.get("is_guest"))
