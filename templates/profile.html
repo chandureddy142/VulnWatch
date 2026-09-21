@@ -228,6 +228,7 @@
 {% endblock %}
 
 {% block content %}
+<main style="max-width: 1500px !important; margin: 0 auto !important; padding: 32px 48px 60px 48px !important; box-sizing: border-box !important;">
 <div class="profile-hero">
     {% if user.picture %}
         <img src="{{ user.picture }}" alt="{{ user.name or user.email }}" class="profile-avatar">
@@ -340,4 +341,5 @@
     </div>
     {% endif %}
 </div>
+</main>
 {% endblock %}
