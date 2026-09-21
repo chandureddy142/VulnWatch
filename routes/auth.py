@@ -271,8 +271,8 @@ def callback():
 @auth_bp.route("/logout")
 def logout():
     """Clear the session and redirect to the home page."""
-    response = redirect(url_for("dashboard.index"))
     session.clear()
+    response = redirect(url_for("dashboard.home"))
     response.delete_cookie("guest_device_id")
     return response
 
