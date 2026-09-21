@@ -184,6 +184,75 @@ def home():
     )
 
 
+@dashboard_bp.route("/api/history", methods=["GET"])
+def scan_history_api():
+    """Paginated JSON endpoint for the home-page scan history AJAX feed.
+
+    Returns masked, public-safe scan data with full pagination metadata so
+    the client can update the table in-place without a full page reload.
+    """
+    db = get_session()
+
+    page = request.args.get("page", 1, type=int)
+    if not isinstance(page, int) or page < 1:
+        page = 1
+    per_page = 10
+
+    completed_query = (
+        db.query(Scan)
+        .filter(Scan.status == ScanStatus.COMPLETED)
+        .order_by(Scan.started_at.desc())
+    )
+
+    total = completed_query.count()
+    total_pages = max(1, (total + per_page - 1) // per_page)
+    if page > total_pages:
+        page = total_pages
+
+    offset = (page - 1) * per_page
+    scans = completed_query.offset(offset).limit(per_page).all()
+
+    items = []
+    for s in scans:
+        score = _compute_posture_score(s.critical_count, s.high_count, s.medium_count, s.low_count)
+        if score >= 80:
+            grade = "Grade A"
+        elif score >= 60:
+            grade = "Grade B"
+        else:
+            grade = "Grade C"
+
+        findings_count = (s.critical_count or 0) + (s.high_count or 0) + (s.medium_count or 0) + (s.low_count or 0) + (s.info_count or 0)
+        items.append({
+            "id": s.id,
+            "target_url": mask_domain(s.target_url, False),
+            "posture_score": score,
+            "grade": grade,
+            "findings_count": findings_count,
+            "status": "Completed",
+            "report_url": f"/reports/{s.id}",
+        })
+
+    has_prev = page > 1
+    has_next = page < total_pages
+
+    return jsonify({
+        "items": items,
+        "page": page,
+        "total_pages": total_pages,
+        "total": total,
+        "has_prev": has_prev,
+        "has_next": has_next,
+        "prev_num": page - 1 if has_prev else None,
+        "next_num": page + 1 if has_next else None,
+        "start_idx": (page - 1) * per_page + 1 if total > 0 else 0,
+        "end_idx": (page - 1) * per_page + len(items),
+        "per_page": per_page,
+    })
+
+
+
+
 @dashboard_bp.route("/dashboard", methods=["GET"])
 def index():
     """Render tenant workspace dashboard summary metrics, asset inventory, and recent scans list."""

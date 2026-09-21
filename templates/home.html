@@ -361,7 +361,7 @@
                     <th class="home-table-th" style="padding: 12px 20px; text-align: right;">Action</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="scanHistoryTableBody">
                 {% set feed_items = scans_pagination.items if scans_pagination is defined and scans_pagination else recent_public_scans %}
                 {% for scan in feed_items %}
                 <tr class="home-table-row">
@@ -406,8 +406,8 @@
 
         <!-- Server-Side Pagination Controls -->
         {% if scans_pagination is defined and scans_pagination and scans_pagination.total > 0 %}
-        <div style="padding: 16px 20px; border-top: 1px solid rgba(226, 232, 240, 0.1); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-            <span class="home-subtext text-slate-500 dark:text-slate-400" style="font-size: 13px; font-weight: 500;">
+        <div id="scanHistoryPagination" style="padding: 16px 20px; border-top: 1px solid rgba(226, 232, 240, 0.1); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <span id="historyRangeCounter" class="home-subtext text-slate-500 dark:text-slate-400" style="font-size: 13px; font-weight: 500;">
                 Showing {{ (scans_pagination.page - 1) * scans_pagination.per_page + 1 }}–{{ (scans_pagination.page - 1) * scans_pagination.per_page + scans_pagination.items|length }} of {{ scans_pagination.total }}
             </span>
 
@@ -507,4 +507,183 @@
     </div>
 
 </main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* ── AJAX Scan History Pagination ──────────────────────────────────────────
+   Intercepts pagination button clicks and fetches fresh rows via /api/history
+   instead of performing a full page reload. Falls back gracefully if JS fails.
+──────────────────────────────────────────────────────────────────────────── */
+(function () {
+    'use strict';
+
+    var SCORE_STYLES = {
+        A: 'background: rgba(16, 185, 129, 0.12); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3);',
+        B: 'background: rgba(245, 158, 11, 0.12); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.3);',
+        C: 'background: rgba(239, 68, 68, 0.12); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.3);'
+    };
+
+    function gradeKey(grade) {
+        if (grade.indexOf('A') !== -1) return 'A';
+        if (grade.indexOf('B') !== -1) return 'B';
+        return 'C';
+    }
+
+    function buildRows(items) {
+        if (!items || items.length === 0) {
+            return '<tr class="home-table-row"><td colspan="5" class="home-subtext" style="padding: 24px; text-align: center;">No public security audits recorded yet.</td></tr>';
+        }
+        return items.map(function (scan) {
+            var key = gradeKey(scan.grade);
+            var badgeStyle = SCORE_STYLES[key];
+            var pluralIssues = scan.findings_count === 1 ? 'issue' : 'issues';
+            return [
+                '<tr class="home-table-row">',
+                  '<td style="padding: 14px 20px;">',
+                    '<span class="home-target-text" style="font-family: \'JetBrains Mono\', monospace; font-size: 13.5px; font-weight: 600;">',
+                      scan.target_url,
+                    '</span>',
+                  '</td>',
+                  '<td style="padding: 14px 20px;">',
+                    '<span style="display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; ' + badgeStyle + '">',
+                      scan.grade + ' (' + scan.posture_score + '/100)',
+                    '</span>',
+                  '</td>',
+                  '<td class="home-subtext" style="padding: 14px 20px;">' + scan.findings_count + ' ' + pluralIssues + '</td>',
+                  '<td style="padding: 14px 20px;">',
+                    '<span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; background: rgba(16, 185, 129, 0.12); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3);">',
+                      scan.status,
+                    '</span>',
+                  '</td>',
+                  '<td style="padding: 14px 20px; text-align: right;">',
+                    '<a href="' + scan.report_url + '" class="home-action-btn" style="display: inline-flex; align-items: center; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none;">View Report</a>',
+                  '</td>',
+                '</tr>'
+            ].join('');
+        }).join('');
+    }
+
+    var BTN_ACTIVE   = 'display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 32px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-weight: 700; background: #4f46e5; color: #ffffff; border: none; cursor: default;';
+    var BTN_INACTIVE = 'display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 32px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-weight: 600; background: #1e293b; color: #cbd5e1; border: 1px solid #334155; cursor: pointer; text-decoration: none;';
+    var BTN_NAV      = 'display: inline-flex; align-items: center; justify-content: center; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; background: #1e293b; color: #cbd5e1; border: 1px solid #334155; cursor: pointer; text-decoration: none;';
+    var BTN_DISABLED = 'display: inline-flex; align-items: center; justify-content: center; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; opacity: 0.5; background: #1e293b; color: #64748b; border: 1px solid #334155; cursor: not-allowed;';
+
+    function buildPagination(data) {
+        var html = '';
+
+        // Prev
+        if (data.has_prev) {
+            html += '<button type="button" data-page="' + data.prev_num + '" style="' + BTN_NAV + '" class="ajax-page-btn">Prev</button>';
+        } else {
+            html += '<span style="' + BTN_DISABLED + '">Prev</span>';
+        }
+
+        // Page numbers (simple window: first, current±2, last)
+        var pages = data.total_pages;
+        var cur   = data.page;
+        var shown = {};
+        [1, cur - 2, cur - 1, cur, cur + 1, cur + 2, pages].forEach(function (n) {
+            if (n >= 1 && n <= pages) shown[n] = true;
+        });
+        var nums = Object.keys(shown).map(Number).sort(function (a, b) { return a - b; });
+        var prev = null;
+        nums.forEach(function (n) {
+            if (prev !== null && n - prev > 1) {
+                html += '<span style="display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 32px; color: #64748b; font-size: 13px;">...</span>';
+            }
+            if (n === cur) {
+                html += '<span style="' + BTN_ACTIVE + '">' + n + '</span>';
+            } else {
+                html += '<button type="button" data-page="' + n + '" style="' + BTN_INACTIVE + '" class="ajax-page-btn">' + n + '</button>';
+            }
+            prev = n;
+        });
+
+        // Next
+        if (data.has_next) {
+            html += '<button type="button" data-page="' + data.next_num + '" style="' + BTN_NAV + '" class="ajax-page-btn">Next</button>';
+        } else {
+            html += '<span style="' + BTN_DISABLED + '">Next</span>';
+        }
+
+        return html;
+    }
+
+    function bindPaginationClicks(container) {
+        container.querySelectorAll('.ajax-page-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var page = parseInt(btn.getAttribute('data-page'), 10);
+                if (!isNaN(page)) loadHistoryPage(page);
+            });
+        });
+    }
+
+    function loadHistoryPage(pageNumber) {
+        var tbody = document.getElementById('scanHistoryTableBody');
+        var paginationEl = document.getElementById('scanHistoryPagination');
+        var counter = document.getElementById('historyRangeCounter');
+        if (!tbody) return;
+
+        tbody.style.opacity = '0.45';
+        tbody.style.pointerEvents = 'none';
+        tbody.style.transition = 'opacity 0.15s';
+
+        fetch('/api/history?page=' + pageNumber, { headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                // Update rows
+                tbody.innerHTML = buildRows(data.items);
+
+                // Update counter
+                if (counter && data.total > 0) {
+                    counter.textContent = 'Showing ' + data.start_idx + '\u2013' + data.end_idx + ' of ' + data.total;
+                }
+
+                // Re-render pagination buttons
+                if (paginationEl) {
+                    var btnRow = paginationEl.querySelector('div[id="historyBtnRow"], div:last-child');
+                    if (!btnRow) {
+                        btnRow = paginationEl.querySelector('div');
+                    }
+                    if (btnRow) {
+                        btnRow.innerHTML = buildPagination(data);
+                        bindPaginationClicks(btnRow);
+                    }
+                }
+            })
+            .catch(function (err) {
+                console.warn('[VulnWatch] History pagination fetch failed:', err);
+            })
+            .finally(function () {
+                tbody.style.opacity = '1';
+                tbody.style.pointerEvents = '';
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var paginationEl = document.getElementById('scanHistoryPagination');
+        if (!paginationEl) return;
+
+        // Wrap existing server-rendered buttons so we can re-inject later
+        var btnContainer = paginationEl.querySelector('div');
+        if (!btnContainer) return;
+
+        // Bind clicks on the SSR-rendered buttons (first paint)
+        bindPaginationClicks(paginationEl);
+
+        // Intercept all anchor-based pagination links inside the pagination block
+        paginationEl.querySelectorAll('a[href]').forEach(function (link) {
+            link.addEventListener('click', function (e) {
+                var href = link.getAttribute('href') || '';
+                var match = href.match(/[?&]page=(\d+)/);
+                if (match) {
+                    e.preventDefault();
+                    loadHistoryPage(parseInt(match[1], 10));
+                }
+            });
+        });
+    });
+}());
+</script>
 {% endblock %}
