@@ -56,17 +56,8 @@
                         <span style="color: #ffffff; font-weight: 800; font-size: 17px; letter-spacing: -0.02em; white-space: nowrap;">VulnWatch</span>
                     </a>
                 </div>
-
-                <!-- CENTER ZONE: Primary Navigation -->
-                <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-                    {% if session.get('user') or session.get('user_id') or is_guest %}
-                    <a href="/dashboard"
-                       style="display: inline-flex; align-items: center; padding: 6px 14px; font-size: 12.5px; font-weight: 600; color: #cbd5e1; background: #1e293b; border: 1px solid #334155; border-radius: 8px; text-decoration: none; white-space: nowrap; transition: background 0.15s, color 0.15s;"
-                       onmouseover="this.style.background='#273549';this.style.color='#f1f5f9'" onmouseout="this.style.background='#1e293b';this.style.color='#cbd5e1'">
-                        Dashboard
-                    </a>
-                    {% endif %}
-                </div>
+                <!-- CENTER ZONE: Clean Layout Space -->
+                <div></div>
 
                 <!-- RIGHT ZONE: Search, Theme, Env Pill & Profile -->
                 <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0; justify-content: flex-end;">
@@ -106,8 +97,8 @@
                     {% if user_obj and user_obj is mapping %}
                         <div class="user-menu" id="user-menu">
                             <button class="user-avatar-btn border-slate-700" id="user-avatar-btn"
-                                    aria-haspopup="true" aria-expanded="false"
-                                    title="{{ user_obj.get('name', 'Account') }}">
+                                     aria-haspopup="true" aria-expanded="false"
+                                     title="{{ user_obj.get('name', 'Account') }}">
                                 {% if user_obj.get('picture') %}
                                     <img src="{{ user_obj.get('picture') }}" alt="{{ user_obj.get('name', 'User') }}" class="user-avatar-img">
                                 {% else %}
@@ -119,6 +110,12 @@
                                     <strong class="text-white">{{ user_obj.get('name', 'Signed In') }}</strong>
                                     <small class="text-slate-400">{{ user_obj.get('email', '') }}</small>
                                 </div>
+                                <a href="/dashboard" class="user-dropdown-item text-slate-300 hover:bg-slate-800 hover:text-white flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px; color: #818cf8;">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                                    </svg>
+                                    Security Dashboard
+                                </a>
                                 <a href="/settings" class="user-dropdown-item text-slate-300 hover:bg-slate-800 hover:text-white">Settings &amp; API Keys</a>
                                 <a href="/profile"  class="user-dropdown-item text-slate-300 hover:bg-slate-800 hover:text-white">My Profile &amp; Scans</a>
                                 <div class="user-dropdown-divider border-t border-slate-800"></div>
@@ -129,8 +126,8 @@
                     {% elif is_guest %}
                         <div class="user-menu guest-menu" id="guest-menu">
                             <button class="guest-quota-btn text-slate-200 bg-slate-800/80 border border-slate-700 hover:bg-slate-700 hover:text-white transition-colors duration-200"
-                                    id="guest-menu-btn" aria-haspopup="true" aria-expanded="false"
-                                    title="Guest session options">
+                                     id="guest-menu-btn" aria-haspopup="true" aria-expanded="false"
+                                     title="Guest session options">
                                 {% if guest_scans_left > 0 %}
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
                                     Guest&thinsp;&mdash;&thinsp;{{ guest_scans_left }}&thinsp;/&thinsp;{{ guest_scan_limit }}
@@ -146,6 +143,12 @@
                                     <strong class="text-white">Guest Account</strong>
                                     <small class="text-slate-400">{{ guest_scans_left }}&thinsp;/&thinsp;{{ guest_scan_limit }} free audits remaining</small>
                                 </div>
+                                <a href="/dashboard" class="user-dropdown-item text-slate-300 hover:bg-slate-800 hover:text-white flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px; color: #818cf8;">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                                    </svg>
+                                    Security Dashboard
+                                </a>
                                 <a href="/auth/login" class="user-dropdown-item text-slate-300 hover:bg-slate-800 hover:text-white">Sign In with Google</a>
                                 <div class="user-dropdown-divider border-t border-slate-800"></div>
                                 <a href="/auth/logout" class="user-dropdown-item user-dropdown-item--danger text-red-400 hover:bg-red-500/10">Log Out / Reset Guest</a>
