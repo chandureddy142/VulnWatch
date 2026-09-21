@@ -11,3 +11,8 @@ def privacy_page():
 @legal_bp.route("/terms")
 def terms_page():
     return render_template("terms.html")
+
+
+@legal_bp.route("/docs")
+def docs_page():
+    return render_template("api_docs.html")

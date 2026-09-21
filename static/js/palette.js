@@ -18,15 +18,21 @@
     // ---- Static navigation items ----
     const NAV_ITEMS = [
         {
-            name: 'Dashboard',
-            hint: 'Overview',
+            name: 'Home',
+            hint: 'Landing & Public Feed',
             href: '/',
+            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+        },
+        {
+            name: 'Security Dashboard',
+            hint: 'Metrics & posture overview',
+            href: '/dashboard',
             icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>',
         },
         {
             name: 'New Audit',
-            hint: 'Launch scan',
-            href: '/scanner',
+            hint: 'Launch target security scan',
+            href: '/scan',
             icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>',
         },
         {
@@ -37,36 +43,17 @@
         },
         {
             name: 'Settings',
-            hint: 'Enterprise config',
+            hint: 'Enterprise configuration & API keys',
             href: '/settings',
             icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
         },
+        {
+            name: 'My Profile & Scans',
+            hint: 'User account & audit history',
+            href: '/profile',
+            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+        },
     ];
-
-    let recentScans = [];
-    let scansFetched = false;
-
-    function fetchRecentScans() {
-        if (scansFetched) return;
-        scansFetched = true;
-        const apiKey = sessionStorage.getItem('webguard_api_key') || '';
-        fetch('/api/scans', {
-            headers: apiKey ? { 'X-API-Key': apiKey } : {}
-        })
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
-                recentScans = (data || []).slice(0, 10).map(function (s) {
-                    return {
-                        name: s.target_url,
-                        hint: 'Scan #' + s.id,
-                        href: '/reports/' + s.id,
-                        icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
-                    };
-                });
-                if (input.value.trim() === '') renderResults('');
-            })
-            .catch(function () { /* graceful no-op */ });
-    }
 
     // ---- Open / close ----
     function open() {
@@ -74,7 +61,6 @@
         input.value = '';
         selectedIndex = -1;
         renderResults('');
-        fetchRecentScans();
         setTimeout(function () { input.focus(); }, 30);
     }
 
@@ -139,33 +125,19 @@
         resultsEl.innerHTML = '';
 
         const navMatches = NAV_ITEMS.filter(function (item) {
-            return !query || item.name.toLowerCase().includes(query);
-        });
-
-        const scanMatches = recentScans.filter(function (item) {
             return !query || item.name.toLowerCase().includes(query) || item.hint.toLowerCase().includes(query);
         });
 
-        if (navMatches.length === 0 && scanMatches.length === 0) {
-            resultsEl.innerHTML = '<div class="palette-empty">No results for "' + _escapeHtml(query) + '"</div>';
+        if (navMatches.length === 0) {
+            resultsEl.innerHTML = '<div class="palette-empty">No destinations found for "' + _escapeHtml(query) + '"</div>';
             return;
         }
 
-        if (navMatches.length > 0) {
-            const label = document.createElement('div');
-            label.className = 'palette-group-label';
-            label.textContent = 'Navigation';
-            resultsEl.appendChild(label);
-            navMatches.forEach(function (item) { resultsEl.appendChild(_makeItem(item)); });
-        }
-
-        if (scanMatches.length > 0) {
-            const label = document.createElement('div');
-            label.className = 'palette-group-label';
-            label.textContent = 'Recent Scans';
-            resultsEl.appendChild(label);
-            scanMatches.slice(0, 6).forEach(function (item) { resultsEl.appendChild(_makeItem(item)); });
-        }
+        const label = document.createElement('div');
+        label.className = 'palette-group-label';
+        label.textContent = 'Navigation Destinations';
+        resultsEl.appendChild(label);
+        navMatches.forEach(function (item) { resultsEl.appendChild(_makeItem(item)); });
     }
 
     function _makeItem(item) {

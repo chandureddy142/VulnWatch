@@ -229,7 +229,7 @@
 
 {% block content %}
 <main style="max-width: 1500px !important; margin: 0 auto !important; padding: 32px 48px 60px 48px !important; box-sizing: border-box !important;">
-<div class="profile-hero">
+<div class="profile-hero bg-indigo-50/30 dark:bg-slate-900/80 border border-indigo-500/20 dark:border-indigo-500/30 text-slate-900 dark:text-slate-100 shadow-sm">
     {% if user.picture %}
         <img src="{{ user.picture }}" alt="{{ user.name or user.email }}" class="profile-avatar">
     {% else %}
@@ -257,19 +257,19 @@
 
 <!-- Stats row -->
 <div class="profile-stats-grid">
-    <div class="profile-stat-card">
+    <div class="profile-stat-card bg-indigo-50/30 dark:bg-slate-900/80 border border-indigo-500/20 dark:border-indigo-500/30 text-slate-900 dark:text-slate-100 shadow-sm">
         <div class="profile-stat-value">{{ total_scans }}</div>
         <div class="profile-stat-label">Total Audits</div>
     </div>
-    <div class="profile-stat-card">
+    <div class="profile-stat-card bg-rose-50/30 dark:bg-slate-900/80 border border-rose-500/20 dark:border-rose-500/30 text-slate-900 dark:text-slate-100 shadow-sm">
         <div class="profile-stat-value">{{ total_findings }}</div>
         <div class="profile-stat-label">Total Findings</div>
     </div>
-    <div class="profile-stat-card">
+    <div class="profile-stat-card bg-emerald-50/30 dark:bg-slate-900/80 border border-emerald-500/20 dark:border-emerald-500/30 text-slate-900 dark:text-slate-100 shadow-sm">
         <div class="profile-stat-value">{{ avg_posture }}</div>
         <div class="profile-stat-label">Avg. Posture Score</div>
     </div>
-    <div class="profile-stat-card">
+    <div class="profile-stat-card bg-rose-50/30 dark:bg-slate-900/80 border border-rose-500/20 dark:border-rose-500/30 text-slate-900 dark:text-slate-100 shadow-sm">
         <div class="profile-stat-value" style="color:var(--sev-high)">
             {{ user_scans | selectattr('high_count', 'gt', 0) | list | length }}
         </div>
@@ -285,7 +285,7 @@
     My Audit History
 </h2>
 
-<div class="scans-table-wrap">
+<div class="scans-table-wrap bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 shadow-sm">
     {% if user_scans %}
     <table class="scans-table" id="profile-scans-table">
         <thead>

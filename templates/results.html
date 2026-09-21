@@ -8,7 +8,7 @@
 
 {% block content %}
 <main style="max-width: 1500px !important; margin: 0 auto !important; padding: 32px 48px 60px 48px !important; width: 100% !important; box-sizing: border-box !important; display: flex !important; flex-direction: column !important; gap: 32px !important;">
-<div class="results-header panel">
+<div class="results-header panel bg-indigo-50/30 dark:bg-slate-900/80 border border-indigo-500/20 dark:border-indigo-500/30 text-slate-900 dark:text-slate-100 shadow-sm">
     <div class="panel-body">
         <div class="header-card-main">
             <div>
@@ -53,7 +53,7 @@
 {% set adv = (scan.response_headers['_advanced'] if scan.response_headers and '_advanced' in scan.response_headers else None) %}
 {% set subdomains = subdomains if subdomains is defined and subdomains is not none else (scan.subdomains if scan.subdomains else (recon.ct_subdomains if recon and recon.ct_subdomains else [])) %}
 {% if recon %}
-<div class="panel recon-panel" id="recon-panel">
+<div class="panel recon-panel bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 shadow-sm" id="recon-panel">
     <div class="recon-panel-header">
         <span class="recon-panel-title">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
@@ -145,7 +145,7 @@
             {% endif %}
 
             <!-- Discovered Subdomains & Attack Surface -->
-            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+            <div class="bg-emerald-50/30 dark:bg-slate-900/80 border border-emerald-500/20 dark:border-emerald-500/30 text-slate-900 dark:text-slate-100 rounded-xl p-5 shadow-sm">
               <div class="flex items-center justify-between mb-3">
                 <h3 class="text-xs font-bold tracking-wider text-slate-400 uppercase">Discovered Subdomains</h3>
                 <span class="px-2 py-0.5 text-[10px] font-mono font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">
@@ -340,7 +340,7 @@
     {% else %}
       {% set _cat_key = 'infra' %}
     {% endif %}
-    <article class="finding-item panel" data-severity="{{ finding.severity.value }}" data-diff="{{ diff_status }}" data-triage="{{ finding.triage_status.value if finding.triage_status else 'active' }}" data-category="{{ _cat_key }}">
+    <article class="finding-item panel bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 shadow-sm" data-severity="{{ finding.severity.value }}" data-diff="{{ diff_status }}" data-triage="{{ finding.triage_status.value if finding.triage_status else 'active' }}" data-category="{{ _cat_key }}">
         <button type="button" class="finding-header" aria-expanded="false">
             <span class="finding-title-group">
                 <span class="badge-sev {{ finding.severity.value.lower() }}">{{ finding.severity.value }}</span>
